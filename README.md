@@ -47,6 +47,14 @@ npm run dev
 npm run build
 ```
 
+## GitHub Pagesへの公開
+
+公開URL: https://shioa2006-game.github.io/EMBERBOUND_EXPEDITION/
+
+GitHubの **Settings → Pages → Build and deployment → Source** は **GitHub Actions** に設定します。`main` へのプッシュ時に `.github/workflows/pages.yml` が Node.js 24 で `npm ci`、テスト、ビルドを実行し、生成した `dist/` のみを公開します。Actionsから手動実行もできます。
+
+リポジトリ直下の `index.html` はVite開発用で、TypeScriptソースを参照します。ブランチのルートをそのまま公開するとゲームが起動しません。公開にはビルド後の `dist/index.html` を使用してください。ビルド成果物をGitにコミットする必要はありません。
+
 ## 開発・検証
 
 | コマンド | 内容 |
