@@ -32,7 +32,30 @@ export interface StoryUnit { key: string; tier?: number; facing?: 'R' | 'L' }
 
 export const STORY_DENSITY = 4;
 const MAX_CACHE_BYTES = 64 * 1024 * 1024;
-const byKey = new Map(definitions.map(def => [def.emberbound.gameId, def]));
+// Game display heights (Guardian = 30). Keep these outside vendor so Studio reimports preserve them.
+const gameHeights: Readonly<Record<string, number>> = {
+  glacial_warden: 60,
+  flame_construct: 60,
+  drowned_archer: 30,
+  rime_archer: 30,
+  geomancer: 30,
+  frost_revenant: 30,
+  hollow_knight: 30,
+  ember_acolyte: 30,
+  gloom_caster: 30,
+  ashen_echo: 30,
+  ice_wraith: 24,
+  shardback: 24,
+  reef_lurker: 24,
+  frost_hound: 24,
+  char_wolf: 24,
+};
+const byKey = new Map(definitions.map(def => {
+  const heightPx = gameHeights[def.emberbound.gameId];
+  return [def.emberbound.gameId, heightPx === undefined ? def : {
+    ...def, emberbound: { ...def.emberbound, heightPx },
+  }];
+}));
 const heroKeys = new Set(['guardian', 'ranger', 'arcanist', 'oracle']);
 const originalPalettes = Object.fromEntries(Object.entries(gearPalettes).map(([key, colors]) => [key, { ...colors }]));
 const allPoses: readonly StoryPose[] = ['idle', 'walk', 'attack', 'cast', 'hurt', 'dead'];
