@@ -574,6 +574,27 @@ canvas {
   color: var(--bad);
 }
 
+/* Long dialogs keep actions in view while their content scrolls. */
+.dialog-scroll {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+  position: relative;
+  z-index: 1;
+}
+.dialog-footer {
+  flex: 0 0 auto;
+  position: relative;
+  z-index: 2;
+  margin: 0;
+  padding: 14px 24px;
+  border-top: 1px solid var(--line-hi);
+  background: var(--bg-1);
+}
+.tb-pause { white-space: nowrap; }
+
 /* ───────────────────────── Tooltip ───────────────────────── */
 
 .tooltip {

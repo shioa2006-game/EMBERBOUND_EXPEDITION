@@ -1,0 +1,1365 @@
+{
+  "viewports": [
+    "1440x900",
+    "1280x720",
+    "1024x600"
+  ],
+  "source": "Real UI components with in-memory fixture saves; includes pointer hit tests, scroll reachability, purchase, swap and key regressions.",
+  "cases": [
+    {
+      "scenario": "early-expedition",
+      "measurements": {
+        "viewport": [
+          1440,
+          900
+        ],
+        "purchaseAvailable": true,
+        "departure": {
+          "x": 1202,
+          "y": 824,
+          "width": 220,
+          "height": 64,
+          "bottom": 888,
+          "right": 1422
+        },
+        "color": "rgb(255, 240, 210)",
+        "background": "linear-gradient(155deg, rgb(130, 80, 43), rgb(88, 51, 30))"
+      },
+      "failures": []
+    },
+    {
+      "scenario": "early-party",
+      "measurements": {
+        "viewport": [
+          1440,
+          900
+        ]
+      },
+      "failures": []
+    },
+    {
+      "scenario": "early-tree",
+      "measurements": {
+        "viewport": [
+          1440,
+          900
+        ]
+      },
+      "failures": []
+    },
+    {
+      "scenario": "early-result",
+      "measurements": {
+        "viewport": [
+          1440,
+          900
+        ],
+        "actions": [
+          {
+            "x": 488,
+            "y": 780.28125,
+            "width": 220,
+            "height": 52,
+            "bottom": 832.28125,
+            "right": 708
+          },
+          {
+            "x": 732,
+            "y": 780.28125,
+            "width": 220,
+            "height": 52,
+            "bottom": 832.28125,
+            "right": 952
+          }
+        ],
+        "scrollHeight": 685
+      },
+      "failures": []
+    },
+    {
+      "scenario": "early-result-plain",
+      "measurements": {
+        "viewport": [
+          1440,
+          900
+        ],
+        "actions": [
+          {
+            "x": 488,
+            "y": 761.03125,
+            "width": 220,
+            "height": 52,
+            "bottom": 813.03125,
+            "right": 708
+          },
+          {
+            "x": 732,
+            "y": 761.03125,
+            "width": 220,
+            "height": 52,
+            "bottom": 813.03125,
+            "right": 952
+          }
+        ],
+        "scrollHeight": 647
+      },
+      "failures": []
+    },
+    {
+      "scenario": "late-expedition",
+      "measurements": {
+        "viewport": [
+          1440,
+          900
+        ],
+        "purchaseAvailable": false,
+        "departure": {
+          "x": 1202,
+          "y": 824,
+          "width": 220,
+          "height": 64,
+          "bottom": 888,
+          "right": 1422
+        },
+        "color": "rgb(255, 240, 210)",
+        "background": "linear-gradient(155deg, rgb(130, 80, 43), rgb(88, 51, 30))"
+      },
+      "failures": []
+    },
+    {
+      "scenario": "late-party",
+      "measurements": {
+        "viewport": [
+          1440,
+          900
+        ]
+      },
+      "failures": []
+    },
+    {
+      "scenario": "late-tree",
+      "measurements": {
+        "viewport": [
+          1440,
+          900
+        ]
+      },
+      "failures": []
+    },
+    {
+      "scenario": "late-relics",
+      "measurements": {
+        "viewport": [
+          1440,
+          900
+        ]
+      },
+      "failures": []
+    },
+    {
+      "scenario": "late-result",
+      "measurements": {
+        "viewport": [
+          1440,
+          900
+        ],
+        "actions": [
+          {
+            "x": 488,
+            "y": 800,
+            "width": 220,
+            "height": 52,
+            "bottom": 852,
+            "right": 708
+          },
+          {
+            "x": 732,
+            "y": 800,
+            "width": 220,
+            "height": 52,
+            "bottom": 852,
+            "right": 952
+          }
+        ],
+        "scrollHeight": 861
+      },
+      "failures": []
+    },
+    {
+      "scenario": "review-settings",
+      "measurements": {
+        "viewport": [
+          1440,
+          900
+        ],
+        "actions": [
+          {
+            "x": 942.890625,
+            "y": 818,
+            "width": 79.109375,
+            "height": 40,
+            "bottom": 858
+          }
+        ]
+      },
+      "failures": []
+    },
+    {
+      "scenario": "review-area",
+      "measurements": {
+        "viewport": [
+          1440,
+          900
+        ],
+        "actions": [
+          {
+            "x": 600,
+            "y": 684.125,
+            "width": 240,
+            "height": 52,
+            "bottom": 736.125
+          }
+        ]
+      },
+      "failures": []
+    },
+    {
+      "scenario": "review-ending",
+      "measurements": {
+        "viewport": [
+          1440,
+          900
+        ],
+        "actions": [
+          {
+            "x": 600,
+            "y": 627.328125,
+            "width": 240,
+            "height": 52,
+            "bottom": 679.328125
+          }
+        ]
+      },
+      "failures": []
+    },
+    {
+      "scenario": "review-true-ending",
+      "measurements": {
+        "viewport": [
+          1440,
+          900
+        ],
+        "actions": [
+          {
+            "x": 600,
+            "y": 737.328125,
+            "width": 240,
+            "height": 52,
+            "bottom": 789.328125
+          }
+        ]
+      },
+      "failures": []
+    },
+    {
+      "scenario": "review-epilogue",
+      "measurements": {
+        "viewport": [
+          1440,
+          900
+        ],
+        "actions": [
+          {
+            "x": 600,
+            "y": 806,
+            "width": 240,
+            "height": 52,
+            "bottom": 858
+          }
+        ]
+      },
+      "failures": []
+    },
+    {
+      "scenario": "review-rekindle",
+      "measurements": {
+        "viewport": [
+          1440,
+          900
+        ],
+        "actions": [
+          {
+            "x": 899.703125,
+            "y": 738.75,
+            "width": 71.296875,
+            "height": 40,
+            "bottom": 778.75
+          },
+          {
+            "x": 981,
+            "y": 738.75,
+            "width": 240,
+            "height": 40,
+            "bottom": 778.75
+          }
+        ]
+      },
+      "failures": []
+    },
+    {
+      "scenario": "review-first-rekindle",
+      "measurements": {
+        "viewport": [
+          1440,
+          900
+        ],
+        "actions": [
+          {
+            "x": 899.703125,
+            "y": 827,
+            "width": 71.296875,
+            "height": 40,
+            "bottom": 867
+          },
+          {
+            "x": 981,
+            "y": 827,
+            "width": 240,
+            "height": 40,
+            "bottom": 867
+          }
+        ]
+      },
+      "failures": []
+    },
+    {
+      "scenario": "review-rekindled",
+      "measurements": {
+        "viewport": [
+          1440,
+          900
+        ],
+        "actions": [
+          {
+            "x": 600,
+            "y": 686.4375,
+            "width": 240,
+            "height": 52,
+            "bottom": 738.4375
+          }
+        ]
+      },
+      "failures": []
+    },
+    {
+      "scenario": "review-swap",
+      "measurements": {
+        "viewport": [
+          1440,
+          900
+        ],
+        "actions": [
+          {
+            "x": 1003.703125,
+            "y": 593.625,
+            "width": 71.296875,
+            "height": 40,
+            "bottom": 633.625
+          }
+        ]
+      },
+      "failures": []
+    },
+    {
+      "scenario": "review-party",
+      "measurements": {
+        "viewport": [
+          1440,
+          900
+        ]
+      },
+      "failures": []
+    },
+    {
+      "scenario": "review-tree-purchase",
+      "measurements": {
+        "viewport": [
+          1440,
+          900
+        ]
+      },
+      "failures": []
+    },
+    {
+      "scenario": "review-result-keys",
+      "measurements": {
+        "viewport": [
+          1440,
+          900
+        ]
+      },
+      "failures": []
+    },
+    {
+      "scenario": "review-milestone",
+      "measurements": {
+        "viewport": [
+          1440,
+          900
+        ],
+        "milestones": [
+          {
+            "x": 62.382896423339844,
+            "y": 433.5534362792969,
+            "width": 249.23419189453125,
+            "height": 51.543487548828125,
+            "bottom": 485.096923828125
+          },
+          {
+            "x": 414.3829040527344,
+            "y": 433.5534362792969,
+            "width": 249.23422241210938,
+            "height": 51.543487548828125,
+            "bottom": 485.096923828125
+          },
+          {
+            "x": 766.3828735351562,
+            "y": 433.5534362792969,
+            "width": 249.23419189453125,
+            "height": 51.543487548828125,
+            "bottom": 485.096923828125
+          },
+          {
+            "x": 1118.3829345703125,
+            "y": 433.5534362792969,
+            "width": 249.2342529296875,
+            "height": 51.543487548828125,
+            "bottom": 485.096923828125
+          }
+        ]
+      },
+      "failures": []
+    },
+    {
+      "scenario": "review-pause",
+      "measurements": {
+        "viewport": [
+          1440,
+          900
+        ]
+      },
+      "failures": []
+    },
+    {
+      "scenario": "review-battle",
+      "measurements": {
+        "viewport": [
+          1440,
+          900
+        ]
+      },
+      "failures": []
+    },
+    {
+      "scenario": "early-expedition",
+      "measurements": {
+        "viewport": [
+          1280,
+          720
+        ],
+        "purchaseAvailable": true,
+        "departure": {
+          "x": 1042,
+          "y": 644,
+          "width": 220,
+          "height": 64,
+          "bottom": 708,
+          "right": 1262
+        },
+        "color": "rgb(255, 240, 210)",
+        "background": "linear-gradient(155deg, rgb(130, 80, 43), rgb(88, 51, 30))"
+      },
+      "failures": []
+    },
+    {
+      "scenario": "early-party",
+      "measurements": {
+        "viewport": [
+          1280,
+          720
+        ]
+      },
+      "failures": []
+    },
+    {
+      "scenario": "early-tree",
+      "measurements": {
+        "viewport": [
+          1280,
+          720
+        ]
+      },
+      "failures": []
+    },
+    {
+      "scenario": "early-result",
+      "measurements": {
+        "viewport": [
+          1280,
+          720
+        ],
+        "actions": [
+          {
+            "x": 408,
+            "y": 620,
+            "width": 220,
+            "height": 52,
+            "bottom": 672,
+            "right": 628
+          },
+          {
+            "x": 652,
+            "y": 620,
+            "width": 220,
+            "height": 52,
+            "bottom": 672,
+            "right": 872
+          }
+        ],
+        "scrollHeight": 685
+      },
+      "failures": []
+    },
+    {
+      "scenario": "early-result-plain",
+      "measurements": {
+        "viewport": [
+          1280,
+          720
+        ],
+        "actions": [
+          {
+            "x": 408,
+            "y": 620,
+            "width": 220,
+            "height": 52,
+            "bottom": 672,
+            "right": 628
+          },
+          {
+            "x": 652,
+            "y": 620,
+            "width": 220,
+            "height": 52,
+            "bottom": 672,
+            "right": 872
+          }
+        ],
+        "scrollHeight": 647
+      },
+      "failures": []
+    },
+    {
+      "scenario": "late-expedition",
+      "measurements": {
+        "viewport": [
+          1280,
+          720
+        ],
+        "purchaseAvailable": false,
+        "departure": {
+          "x": 1042,
+          "y": 644,
+          "width": 220,
+          "height": 64,
+          "bottom": 708,
+          "right": 1262
+        },
+        "color": "rgb(255, 240, 210)",
+        "background": "linear-gradient(155deg, rgb(130, 80, 43), rgb(88, 51, 30))"
+      },
+      "failures": []
+    },
+    {
+      "scenario": "late-party",
+      "measurements": {
+        "viewport": [
+          1280,
+          720
+        ]
+      },
+      "failures": []
+    },
+    {
+      "scenario": "late-tree",
+      "measurements": {
+        "viewport": [
+          1280,
+          720
+        ]
+      },
+      "failures": []
+    },
+    {
+      "scenario": "late-relics",
+      "measurements": {
+        "viewport": [
+          1280,
+          720
+        ]
+      },
+      "failures": []
+    },
+    {
+      "scenario": "late-result",
+      "measurements": {
+        "viewport": [
+          1280,
+          720
+        ],
+        "actions": [
+          {
+            "x": 408,
+            "y": 620,
+            "width": 220,
+            "height": 52,
+            "bottom": 672,
+            "right": 628
+          },
+          {
+            "x": 652,
+            "y": 620,
+            "width": 220,
+            "height": 52,
+            "bottom": 672,
+            "right": 872
+          }
+        ],
+        "scrollHeight": 861
+      },
+      "failures": []
+    },
+    {
+      "scenario": "review-settings",
+      "measurements": {
+        "viewport": [
+          1280,
+          720
+        ],
+        "actions": [
+          {
+            "x": 862.890625,
+            "y": 638,
+            "width": 79.109375,
+            "height": 40,
+            "bottom": 678
+          }
+        ]
+      },
+      "failures": []
+    },
+    {
+      "scenario": "review-area",
+      "measurements": {
+        "viewport": [
+          1280,
+          720
+        ],
+        "actions": [
+          {
+            "x": 520,
+            "y": 594.125,
+            "width": 240,
+            "height": 52,
+            "bottom": 646.125
+          }
+        ]
+      },
+      "failures": []
+    },
+    {
+      "scenario": "review-ending",
+      "measurements": {
+        "viewport": [
+          1280,
+          720
+        ],
+        "actions": [
+          {
+            "x": 520,
+            "y": 537.328125,
+            "width": 240,
+            "height": 52,
+            "bottom": 589.328125
+          }
+        ]
+      },
+      "failures": []
+    },
+    {
+      "scenario": "review-true-ending",
+      "measurements": {
+        "viewport": [
+          1280,
+          720
+        ],
+        "actions": [
+          {
+            "x": 520,
+            "y": 626,
+            "width": 240,
+            "height": 52,
+            "bottom": 678
+          }
+        ]
+      },
+      "failures": []
+    },
+    {
+      "scenario": "review-epilogue",
+      "measurements": {
+        "viewport": [
+          1280,
+          720
+        ],
+        "actions": [
+          {
+            "x": 520,
+            "y": 626,
+            "width": 240,
+            "height": 52,
+            "bottom": 678
+          }
+        ]
+      },
+      "failures": []
+    },
+    {
+      "scenario": "review-rekindle",
+      "measurements": {
+        "viewport": [
+          1280,
+          720
+        ],
+        "actions": [
+          {
+            "x": 819.703125,
+            "y": 605.75,
+            "width": 71.296875,
+            "height": 40,
+            "bottom": 645.75
+          },
+          {
+            "x": 901,
+            "y": 605.75,
+            "width": 240,
+            "height": 40,
+            "bottom": 645.75
+          }
+        ]
+      },
+      "failures": []
+    },
+    {
+      "scenario": "review-first-rekindle",
+      "measurements": {
+        "viewport": [
+          1280,
+          720
+        ],
+        "actions": [
+          {
+            "x": 819.703125,
+            "y": 647,
+            "width": 71.296875,
+            "height": 40,
+            "bottom": 687
+          },
+          {
+            "x": 901,
+            "y": 647,
+            "width": 240,
+            "height": 40,
+            "bottom": 687
+          }
+        ]
+      },
+      "failures": []
+    },
+    {
+      "scenario": "review-rekindled",
+      "measurements": {
+        "viewport": [
+          1280,
+          720
+        ],
+        "actions": [
+          {
+            "x": 520,
+            "y": 596.4375,
+            "width": 240,
+            "height": 52,
+            "bottom": 648.4375
+          }
+        ]
+      },
+      "failures": []
+    },
+    {
+      "scenario": "review-swap",
+      "measurements": {
+        "viewport": [
+          1280,
+          720
+        ],
+        "actions": [
+          {
+            "x": 923.703125,
+            "y": 503.625,
+            "width": 71.296875,
+            "height": 40,
+            "bottom": 543.625
+          }
+        ]
+      },
+      "failures": []
+    },
+    {
+      "scenario": "review-party",
+      "measurements": {
+        "viewport": [
+          1280,
+          720
+        ]
+      },
+      "failures": []
+    },
+    {
+      "scenario": "review-tree-purchase",
+      "measurements": {
+        "viewport": [
+          1280,
+          720
+        ]
+      },
+      "failures": []
+    },
+    {
+      "scenario": "review-result-keys",
+      "measurements": {
+        "viewport": [
+          1280,
+          720
+        ]
+      },
+      "failures": []
+    },
+    {
+      "scenario": "review-milestone",
+      "measurements": {
+        "viewport": [
+          1280,
+          720
+        ],
+        "milestones": [
+          {
+            "x": 42.10858154296875,
+            "y": 385.42108154296875,
+            "width": 249.7828369140625,
+            "height": 51.65692138671875,
+            "bottom": 437.0780029296875
+          },
+          {
+            "x": 354.10858154296875,
+            "y": 385.42108154296875,
+            "width": 249.7828369140625,
+            "height": 51.65692138671875,
+            "bottom": 437.0780029296875
+          },
+          {
+            "x": 666.1085815429688,
+            "y": 385.42108154296875,
+            "width": 249.7828369140625,
+            "height": 51.65692138671875,
+            "bottom": 437.0780029296875
+          },
+          {
+            "x": 978.1085815429688,
+            "y": 385.42108154296875,
+            "width": 249.78277587890625,
+            "height": 51.65692138671875,
+            "bottom": 437.0780029296875
+          }
+        ]
+      },
+      "failures": []
+    },
+    {
+      "scenario": "review-pause",
+      "measurements": {
+        "viewport": [
+          1280,
+          720
+        ]
+      },
+      "failures": []
+    },
+    {
+      "scenario": "review-battle",
+      "measurements": {
+        "viewport": [
+          1280,
+          720
+        ]
+      },
+      "failures": []
+    },
+    {
+      "scenario": "early-expedition",
+      "measurements": {
+        "viewport": [
+          1024,
+          600
+        ],
+        "purchaseAvailable": true,
+        "departure": {
+          "x": 786,
+          "y": 524,
+          "width": 220,
+          "height": 64,
+          "bottom": 588,
+          "right": 1006
+        },
+        "color": "rgb(255, 240, 210)",
+        "background": "linear-gradient(155deg, rgb(130, 80, 43), rgb(88, 51, 30))"
+      },
+      "failures": []
+    },
+    {
+      "scenario": "early-party",
+      "measurements": {
+        "viewport": [
+          1024,
+          600
+        ]
+      },
+      "failures": []
+    },
+    {
+      "scenario": "early-tree",
+      "measurements": {
+        "viewport": [
+          1024,
+          600
+        ]
+      },
+      "failures": []
+    },
+    {
+      "scenario": "early-result",
+      "measurements": {
+        "viewport": [
+          1024,
+          600
+        ],
+        "actions": [
+          {
+            "x": 280,
+            "y": 500,
+            "width": 220,
+            "height": 52,
+            "bottom": 552,
+            "right": 500
+          },
+          {
+            "x": 524,
+            "y": 500,
+            "width": 220,
+            "height": 52,
+            "bottom": 552,
+            "right": 744
+          }
+        ],
+        "scrollHeight": 676
+      },
+      "failures": []
+    },
+    {
+      "scenario": "early-result-plain",
+      "measurements": {
+        "viewport": [
+          1024,
+          600
+        ],
+        "actions": [
+          {
+            "x": 280,
+            "y": 500,
+            "width": 220,
+            "height": 52,
+            "bottom": 552,
+            "right": 500
+          },
+          {
+            "x": 524,
+            "y": 500,
+            "width": 220,
+            "height": 52,
+            "bottom": 552,
+            "right": 744
+          }
+        ],
+        "scrollHeight": 637
+      },
+      "failures": []
+    },
+    {
+      "scenario": "late-expedition",
+      "measurements": {
+        "viewport": [
+          1024,
+          600
+        ],
+        "purchaseAvailable": false,
+        "departure": {
+          "x": 786,
+          "y": 524,
+          "width": 220,
+          "height": 64,
+          "bottom": 588,
+          "right": 1006
+        },
+        "color": "rgb(255, 240, 210)",
+        "background": "linear-gradient(155deg, rgb(130, 80, 43), rgb(88, 51, 30))"
+      },
+      "failures": []
+    },
+    {
+      "scenario": "late-party",
+      "measurements": {
+        "viewport": [
+          1024,
+          600
+        ]
+      },
+      "failures": []
+    },
+    {
+      "scenario": "late-tree",
+      "measurements": {
+        "viewport": [
+          1024,
+          600
+        ]
+      },
+      "failures": []
+    },
+    {
+      "scenario": "late-relics",
+      "measurements": {
+        "viewport": [
+          1024,
+          600
+        ]
+      },
+      "failures": []
+    },
+    {
+      "scenario": "late-result",
+      "measurements": {
+        "viewport": [
+          1024,
+          600
+        ],
+        "actions": [
+          {
+            "x": 280,
+            "y": 500,
+            "width": 220,
+            "height": 52,
+            "bottom": 552,
+            "right": 500
+          },
+          {
+            "x": 524,
+            "y": 500,
+            "width": 220,
+            "height": 52,
+            "bottom": 552,
+            "right": 744
+          }
+        ],
+        "scrollHeight": 851
+      },
+      "failures": []
+    },
+    {
+      "scenario": "review-settings",
+      "measurements": {
+        "viewport": [
+          1024,
+          600
+        ],
+        "actions": [
+          {
+            "x": 734.890625,
+            "y": 518,
+            "width": 79.109375,
+            "height": 40,
+            "bottom": 558
+          }
+        ]
+      },
+      "failures": []
+    },
+    {
+      "scenario": "review-area",
+      "measurements": {
+        "viewport": [
+          1024,
+          600
+        ],
+        "actions": [
+          {
+            "x": 392,
+            "y": 475.625,
+            "width": 240,
+            "height": 52,
+            "bottom": 527.625
+          }
+        ]
+      },
+      "failures": []
+    },
+    {
+      "scenario": "review-ending",
+      "measurements": {
+        "viewport": [
+          1024,
+          600
+        ],
+        "actions": [
+          {
+            "x": 392,
+            "y": 455.578125,
+            "width": 240,
+            "height": 52,
+            "bottom": 507.578125
+          }
+        ]
+      },
+      "failures": []
+    },
+    {
+      "scenario": "review-true-ending",
+      "measurements": {
+        "viewport": [
+          1024,
+          600
+        ],
+        "actions": [
+          {
+            "x": 392,
+            "y": 506,
+            "width": 240,
+            "height": 52,
+            "bottom": 558
+          }
+        ]
+      },
+      "failures": []
+    },
+    {
+      "scenario": "review-epilogue",
+      "measurements": {
+        "viewport": [
+          1024,
+          600
+        ],
+        "actions": [
+          {
+            "x": 392,
+            "y": 506,
+            "width": 240,
+            "height": 52,
+            "bottom": 558
+          }
+        ]
+      },
+      "failures": []
+    },
+    {
+      "scenario": "review-rekindle",
+      "measurements": {
+        "viewport": [
+          1024,
+          600
+        ],
+        "actions": [
+          {
+            "x": 665.703125,
+            "y": 527,
+            "width": 71.296875,
+            "height": 40,
+            "bottom": 567
+          },
+          {
+            "x": 747,
+            "y": 527,
+            "width": 240,
+            "height": 40,
+            "bottom": 567
+          }
+        ]
+      },
+      "failures": []
+    },
+    {
+      "scenario": "review-first-rekindle",
+      "measurements": {
+        "viewport": [
+          1024,
+          600
+        ],
+        "actions": [
+          {
+            "x": 665.703125,
+            "y": 527,
+            "width": 71.296875,
+            "height": 40,
+            "bottom": 567
+          },
+          {
+            "x": 747,
+            "y": 527,
+            "width": 240,
+            "height": 40,
+            "bottom": 567
+          }
+        ]
+      },
+      "failures": []
+    },
+    {
+      "scenario": "review-rekindled",
+      "measurements": {
+        "viewport": [
+          1024,
+          600
+        ],
+        "actions": [
+          {
+            "x": 392,
+            "y": 506,
+            "width": 240,
+            "height": 52,
+            "bottom": 558
+          }
+        ]
+      },
+      "failures": []
+    },
+    {
+      "scenario": "review-swap",
+      "measurements": {
+        "viewport": [
+          1024,
+          600
+        ],
+        "actions": [
+          {
+            "x": 795.703125,
+            "y": 443.625,
+            "width": 71.296875,
+            "height": 40,
+            "bottom": 483.625
+          }
+        ]
+      },
+      "failures": []
+    },
+    {
+      "scenario": "review-party",
+      "measurements": {
+        "viewport": [
+          1024,
+          600
+        ]
+      },
+      "failures": []
+    },
+    {
+      "scenario": "review-tree-purchase",
+      "measurements": {
+        "viewport": [
+          1024,
+          600
+        ]
+      },
+      "failures": []
+    },
+    {
+      "scenario": "review-result-keys",
+      "measurements": {
+        "viewport": [
+          1024,
+          600
+        ]
+      },
+      "failures": []
+    },
+    {
+      "scenario": "review-milestone",
+      "measurements": {
+        "viewport": [
+          1024,
+          600
+        ],
+        "milestones": [
+          {
+            "x": 51.711570739746094,
+            "y": 341.5537109375,
+            "width": 249.23309326171875,
+            "height": 51.54327392578125,
+            "bottom": 393.09698486328125
+          },
+          {
+            "x": 382.3678283691406,
+            "y": 341.5537109375,
+            "width": 249.23312377929688,
+            "height": 51.54327392578125,
+            "bottom": 393.09698486328125
+          },
+          {
+            "x": 713.0396728515625,
+            "y": 341.5537109375,
+            "width": 249.23309326171875,
+            "height": 51.54327392578125,
+            "bottom": 393.09698486328125
+          }
+        ]
+      },
+      "failures": []
+    },
+    {
+      "scenario": "review-pause",
+      "measurements": {
+        "viewport": [
+          1024,
+          600
+        ]
+      },
+      "failures": []
+    },
+    {
+      "scenario": "review-battle",
+      "measurements": {
+        "viewport": [
+          1024,
+          600
+        ]
+      },
+      "failures": []
+    }
+  ]
+}

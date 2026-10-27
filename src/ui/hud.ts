@@ -6,6 +6,7 @@ import type { Battle } from '../core/battle.ts';
 import { AREA_ORDER, HERO_ORDER, type BattleEvent, type HeroId, type SaveData, type Unit } from '../core/types.ts';
 import type { IconKey } from '../render/sprites/index.ts';
 import { clamp, clear, flash, fmt, h, icon, setAttr, setText, setVar, toggleClass } from './dom.ts';
+import { heroMechanic, skillDescription } from './skill-description.ts';
 
 export interface HudHost {
   getSave(): SaveData;
@@ -334,7 +335,7 @@ export class BattleHud {
 
   private skillTip(hero: HeroId, cd: number): string {
     const sk = HEROES[hero].skill;
-    return `${sk.name} [${sk.key}]|${sk.desc}\nCooldown ${cd.toFixed(cd % 1 ? 1 : 0)}秒\nPERFECT：${sk.perfect}（クールダウン${Math.round(BAL.perfectRefund * 100)}%回復）`;
+    return `${sk.name} [${sk.key}]|${this.b ? skillDescription(hero, this.b.mods) : sk.desc}\nCooldown ${cd.toFixed(cd % 1 ? 1 : 0)}秒\nPERFECT：${sk.perfect}（クールダウン${Math.round(BAL.perfectRefund * 100)}%回復）`;
   }
 
   private makeSlot(hero: HeroId, recruited = false): SkillSlot {
@@ -393,7 +394,7 @@ export class BattleHud {
     const vow = hero === 'guardian' && b.mods.unbrokenVow ? h('div', { class: 'hc-vow' }, h('div', { class: 'hc-vow-fill' })) : null;
     const root = h(
       'div',
-      { class: `hero-card hero-${hero}`, style: `--hc: ${def.color}`, tip: `${def.name}｜${def.title}|${def.mechanic}` },
+      { class: `hero-card hero-${hero}`, style: `--hc: ${def.color}`, tip: `${def.name}｜${def.title}|${heroMechanic(hero, b.mods)}` },
       h('div', { class: 'hc-portrait' }, icon(`hero_${hero}` as IconKey, 2)),
       h(
         'div',

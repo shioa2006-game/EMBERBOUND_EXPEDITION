@@ -239,6 +239,7 @@ export class CampView implements ICampView {
     const backdrop = h('div', 'camp-modal-backdrop');
     layer.append(backdrop, panel);
     document.body.appendChild(layer);
+    const previousFocus = document.activeElement as HTMLElement | null;
     let closed = false;
     const close = () => {
       if (closed) return;
@@ -246,11 +247,16 @@ export class CampView implements ICampView {
       layer.classList.add('is-leaving');
       window.setTimeout(() => layer.remove(), 220);
       if (this.modal && this.modal.layer === layer) this.modal = null;
+      if (previousFocus?.isConnected) previousFocus.focus({ preventScroll: true });
       onClose?.();
     };
     backdrop.addEventListener('click', close);
     this.modal = { layer, close };
-    requestAnimationFrame(() => layer.classList.add('is-open'));
+    requestAnimationFrame(() => {
+      if (closed) return;
+      layer.classList.add('is-open');
+      panel.querySelector<HTMLElement>('footer button')?.focus({ preventScroll: true });
+    });
     return close;
   }
 

@@ -209,7 +209,7 @@ export function showResult(host: ResultHost, r: RunResult, notices: Notice[]): P
 
   // ── buttons
   const upgradeBtn = h('button', { class: 'btn primary big res-upgrade' }, h('span', { text: '強化する' }), h('span', { class: 'key-badge', text: 'Enter' }));
-  const againBtn = h('button', { class: 'btn big res-again' }, h('span', { text: 'もう一度出発' }), h('span', { class: 'key-badge', text: 'Space' }));
+  const againBtn = h('button', { class: 'btn big res-again' }, h('span', { text: 'もう一度出発' }), h('span', { class: 'key-badge', text: 'R' }));
   const actionHint = h('p', { class: 'res-action-hint', text: 'Goldでヒーローを強化しよう！' });
   actionHint.hidden = true;
 
@@ -248,12 +248,17 @@ export function showResult(host: ResultHost, r: RunResult, notices: Notice[]): P
       closable: false,
       label: '遠征結果',
       onKey: (e) => {
+        if (e.ctrlKey || e.metaKey || e.altKey) return false;
         if (e.repeat) return true;
         if (e.key === 'Enter' || e.key === 'Escape') {
           choose('upgrade');
           return true;
         }
         if (e.key === ' ' || e.code === 'Space') {
+          // Space remains a battle action; consume it, including native button activation.
+          return true;
+        }
+        if (e.code === 'KeyR' || e.key.toLowerCase() === 'r') {
           choose('again');
           return true;
         }

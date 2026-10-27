@@ -18,6 +18,7 @@ import type { SpritePose } from '../../render/sprites/index.ts';
 import { drawSprite, fmt, fmtPct, fmtStat, h, icon, setText } from './dom.ts';
 import { HERO_COLOR, MILESTONE_TEXT, type CampHost, type TabView } from './host.ts';
 import { burst, centerIn, floatText, pop, shake } from './juice.ts';
+import { heroMechanic, skillDescription } from '../skill-description.ts';
 
 type BuyKind = 'one' | 'ten' | 'max';
 type StatKey = 'atk' | 'hp' | 'spd' | 'crit';
@@ -47,6 +48,8 @@ interface HeroCard {
   msLeft: HTMLElement;
   msFill: HTMLElement;
   cdMeta: HTMLElement;
+  skillDesc: HTMLElement;
+  mechanic: HTMLElement;
   buys: Record<BuyKind, BuyButton>;
   pose: SpritePose;
   poseUntil: number;
@@ -265,6 +268,8 @@ export class PartyTab implements TabView {
     const buys: Record<BuyKind, BuyButton> = { one: mkBuy('one'), ten: mkBuy('ten'), max: mkBuy('max') };
     const sk = def.skill;
     const cdMeta = h('span', 'camp-skill-meta', '');
+    const skillDesc = h('p', 'camp-skill-desc');
+    const mechanic = h('p', 'camp-hero-mech');
     const el = h(
       'article',
       { class: 'camp-hero', style: `--hc:${HERO_COLOR[hero]}`, data: { hero } },
@@ -289,7 +294,7 @@ export class PartyTab implements TabView {
         h('div', 'camp-ms-head', icon('crown', 16), msLabel, msLeft),
         h('div', 'camp-ms-bar', msFill),
       ),
-      h('p', 'camp-hero-mech', def.mechanic),
+      mechanic,
       h(
         'div',
         'camp-skill',
@@ -299,7 +304,7 @@ export class PartyTab implements TabView {
           icon(`skill_${sk.id}` as Parameters<typeof icon>[0], 32, 'camp-skill-icon'),
           h('div', 'camp-skill-name', sk.name, cdMeta),
         ),
-        h('p', 'camp-skill-desc', sk.desc),
+        skillDesc,
         h('p', 'camp-skill-perfect', h('span', 'camp-perfect-tag', 'PERFECT'), sk.perfect),
       ),
       h('div', 'camp-buys', buys.one.el, buys.ten.el, buys.max.el),
@@ -318,6 +323,8 @@ export class PartyTab implements TabView {
       msLeft,
       msFill,
       cdMeta,
+      skillDesc,
+      mechanic,
       buys,
       pose: 'idle',
       poseUntil: 0,
@@ -357,6 +364,8 @@ export class PartyTab implements TabView {
     const mods = this.host.mods();
     const hero = card.hero;
     const cd = skillCooldown(mods, hero);
+    setText(card.skillDesc, skillDescription(hero, mods));
+    setText(card.mechanic, heroMechanic(hero, mods));
     setText(card.cdMeta, `[${HEROES[hero].skill.key}] CD ${cd % 1 ? cd.toFixed(1) : cd}s`);
     const level = save.heroes[hero].level;
     setText(card.lv, String(level));
@@ -523,7 +532,8 @@ export class PartyTab implements TabView {
       void card.el.offsetWidth;
       card.el.classList.add('is-milestone');
       window.setTimeout(() => card.el.classList.remove('is-milestone'), 1600);
-      floatText(layer, `MILESTONE Lv${top}!`, pp.x, pp.y - 30, 'camp-float--ms');
+      const cardCenter = centerIn(layer, card.el);
+      floatText(layer, `Lv${top} 装備更新！`, cardCenter.x, pp.y - 30, 'camp-float--ms');
       burst(layer, pp.x, pp.y, '#ffd84a', 22, 90);
       this.host.ctx.toast(`${HEROES[card.hero].name} Lv${top}到達！ ${MILESTONE_TEXT}`, 'good');
     }

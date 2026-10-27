@@ -77,7 +77,9 @@ export class NoticePlayer {
     if (card.sfx) this.host.audio.play(card.sfx);
     const btn = h('button', { class: 'btn primary big nt-continue' }, card.button ?? 'つづける', h('span', { class: 'key-badge', text: 'Enter' }));
     const body = card.build();
-    const panel = h('div', { class: `notice notice-${card.kind}` }, emberField(14), body, h('div', { class: 'nt-actions' }, btn));
+    const panel = h('div', { class: `notice notice-${card.kind}` }, emberField(14),
+      h('div', { class: 'dialog-scroll', attrs: { tabindex: '0', 'aria-label': 'お知らせの詳細' } }, body),
+      h('footer', { class: 'nt-actions dialog-footer' }, btn));
     const layer = h('div', { class: 'notice-layer', attrs: { role: 'dialog', 'aria-modal': 'true' } }, h('div', { class: 'notice-backdrop' }), panel);
     this.root.appendChild(layer);
     requestAnimationFrame(() => layer.classList.add('in'));

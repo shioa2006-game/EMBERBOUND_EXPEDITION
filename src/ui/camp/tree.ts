@@ -414,6 +414,8 @@ export class TreeTab implements TabView {
     setText(this.countVal, `${ownedCount} / ${TREE.length - 1}`);
     this.renderGoal(views);
     this.renderDetail();
+    const tipId = this.hovered ?? this.selected;
+    if (this.tip.classList.contains('is-on') && tipId) this.showTip(tipId);
     if (this.visible) this.checkSynergyHint(views);
   }
 
@@ -969,7 +971,7 @@ export class TreeTab implements TabView {
     if (v.status === 'sealed') line = v.sealReason ?? '封印中';
     else if (v.status === 'maxed') line = ne.def.kind === 'root' ? '起点' : '習得済み';
     else if (v.status === 'locked' && v.rank === 0) line = '前提ノードが必要';
-    else if (v.affordable) line = `習得可能（${fmt(v.cost!)} Ember）`;
+    else if (v.affordable) line = `${v.rank > 0 ? `ランク${v.rank + 1}へ強化可能` : '習得可能'}（${fmt(v.cost!)} Ember）`;
     else line = `${fmt(v.cost ?? 0)} Ember 必要`;
     this.tip.replaceChildren(h('b', null, ne.def.name), h('span', `is-${v.status}${v.affordable ? ' is-affordable' : ''}`, line));
     const sr = this.stage.getBoundingClientRect();

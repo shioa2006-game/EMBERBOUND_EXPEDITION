@@ -5,10 +5,11 @@
 const frame=document.querySelector('#frame'),size=document.querySelector('#size'),scenario=document.querySelector('#scenario'),status=document.querySelector('#status'),results=document.querySelector('#results');
 let queue=[],reports=[],running=false;
 const params=new URLSearchParams(location.search);
+for(const name of ['settings','area','ending','true-ending','epilogue','rekindle','first-rekindle','rekindled','swap','party','tree-purchase','result-keys','milestone','pause','battle']){const o=document.createElement('option');o.value=o.textContent='review-'+name;scenario.append(o);}
 if(params.has('capture'))document.body.classList.add('capture');
 if([...size.options].some(o=>o.value===params.get('size')))size.value=params.get('size');
 if([...scenario.options].some(o=>o.value===params.get('scenario')))scenario.value=params.get('scenario');
-function show(){const[w,h]=size.value.split('x').map(Number);frame.style.width=w+'px';frame.style.height=h+'px';frame.src='./ui-layout-fixture.html?scenario='+scenario.value;status.textContent='確認中 '+size.value+' '+scenario.value;}
+function show(){const[w,h]=size.value.split('x').map(Number);frame.style.width=w+'px';frame.style.height=h+'px';frame.src=(scenario.value.startsWith('review-')?'./playtest-ui-fixture.html':'./ui-layout-fixture.html')+'?scenario='+scenario.value+(params.has('capture')?'&preview':'');status.textContent='確認中 '+size.value+' '+scenario.value;}
 function next(){if(!queue.length){running=false;status.textContent=reports.some(r=>r.failures.length)?'FAILED':'PASSED';results.textContent=JSON.stringify(reports,null,2);return;}const item=queue.shift();size.value=item.size;scenario.value=item.scenario;show();}
 window.addEventListener('message',e=>{if(e.origin!==location.origin||e.source!==frame.contentWindow||e.data.type!=='ui-layout-result')return;reports.push(e.data.report);results.textContent=JSON.stringify(reports,null,2);if(running)next();else status.textContent=e.data.report.failures.length?'FAILED':'PASSED';});
 document.querySelector('#show').onclick=()=>{if(running)return;reports=[];show();};

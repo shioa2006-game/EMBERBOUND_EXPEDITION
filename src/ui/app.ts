@@ -107,6 +107,7 @@ export class App {
       soundOn: () => this.soundOn(),
       toggleSound: () => this.toggleSound(),
       openSettings: () => this.openSettings(),
+      openPause: () => this.openPauseMenu(),
     });
     this.hud = new BattleHud({
       getSave: () => this.save,

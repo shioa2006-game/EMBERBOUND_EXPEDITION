@@ -1,5 +1,5 @@
 // レリック / Relics tab: buy relics with Relic Shards and equip them into the limited slots.
-import { bossShardsFor, buyRelic, equipRelic, relicSlots, unequipRelic } from '../../core/state.ts';
+import { bossShardsFor, buyRelic, equipRelic, relicSlots, swapRelic, unequipRelic } from '../../core/state.ts';
 import { AREA_ORDER, type RelicDef } from '../../core/types.ts';
 import { AREAS } from '../../data/areas.ts';
 import { RELIC_LIST, RELICS } from '../../data/relics.ts';
@@ -135,8 +135,8 @@ export class RelicsTab implements TabView {
       } else {
         action = h(
           'button',
-          { class: `camp-btn camp-relic-action${full ? ' is-poor' : ''}`, attrs: { type: 'button', 'aria-disabled': full ? 'true' : 'false' }, on: { click: (e) => this.equip(r, e.currentTarget as HTMLElement) } },
-          '装備する',
+          { class: 'camp-btn camp-relic-action camp-btn--primary', attrs: { type: 'button' }, on: { click: (e) => full ? this.swap(r) : this.equip(r, e.currentTarget as HTMLElement) } },
+          full ? '入れ替える' : '装備する',
         );
       }
       const cls = ['camp-relic'];
@@ -154,6 +154,7 @@ export class RelicsTab implements TabView {
             h('div', 'camp-relic-name', r.name),
             h('span', 'camp-chip camp-chip--build', r.build),
             h('p', 'camp-relic-desc', r.desc),
+            !isEq ? h('p', 'camp-relic-help', full ? '装備枠が満杯です。装備中のレリックと交換できます。' : !isOwned ? '購入すると空き枠に自動で装備します。' : '空き枠に装備できます。') : null,
           ),
           h('div', 'camp-relic-foot', isOwned ? h('span', 'camp-relic-state', isEq ? '装備中' : '所持') : h('span', 'camp-dim', '未所持'), action),
         ),
@@ -227,6 +228,39 @@ export class RelicsTab implements TabView {
     if (!unequipRelic(save, id)) return;
     this.host.commit();
     this.host.sfx('uiClick', { pitch: 0.85 });
+  }
+
+  private swap(incoming: RelicDef): void {
+    const choices = h('div', 'camp-swap-choices');
+    const cancel = h('button', { class: 'camp-btn camp-btn--ghost', attrs: { type: 'button' } }, 'やめる');
+    const panel = h('div', { class: 'camp-modal camp-swap', attrs: { role: 'dialog', 'aria-modal': 'true', 'aria-label': 'レリックを入れ替える' } },
+      h('div', { class: 'dialog-scroll', attrs: { tabindex: '0', 'aria-label': '交換するレリック' } },
+        h('h2', null, 'レリックを入れ替える'),
+        h('p', 'camp-swap-intro', `${incoming.name}を装備します。外すレリックを選んでください。Shardは消費しません。`),
+        choices),
+      h('footer', 'dialog-footer', cancel));
+    const close = this.host.openModal(panel);
+    cancel.addEventListener('click', close);
+    for (const outgoing of this.host.save().relicsEquipped) {
+      const r = RELICS[outgoing];
+      if (!r) continue;
+      const choose = h('button', { class: 'camp-btn camp-swap-choice', attrs: { type: 'button' }, data: { outgoing } },
+        relicIcon(r, 32), h('span', null, h('b', null, r.name), h('span', null, r.desc)), h('span', 'camp-swap-label', 'これと交換'));
+      choose.addEventListener('click', () => {
+        if (!swapRelic(this.host.save(), outgoing, incoming.id)) {
+          this.host.ctx.toast('装備が変わりました。もう一度選んでください', 'warn');
+          close();
+          return;
+        }
+        close();
+        this.host.commit();
+        this.host.sfx('relic');
+        this.celebrate(incoming.id, '装備');
+        this.host.ctx.toast(`${r.name} → ${incoming.name} に入れ替えた`, 'good');
+        this.cardEl(incoming.id)?.querySelector<HTMLButtonElement>('button')?.focus({ preventScroll: true });
+      });
+      choices.appendChild(choose);
+    }
   }
 
   private celebrate(id: string, text: string): void {

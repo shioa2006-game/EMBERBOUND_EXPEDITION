@@ -238,6 +238,15 @@ export function unequipRelic(save: SaveData, id: string): boolean {
   return true;
 }
 
+/** Replace one equipped relic without spending Shards or leaving an intermediate empty slot. */
+export function swapRelic(save: SaveData, outgoing: string, incoming: string): boolean {
+  const slot = save.relicsEquipped.indexOf(outgoing);
+  if (slot < 0 || slot >= relicSlots(save) || !RELICS[incoming] ||
+      !save.relicsOwned.includes(incoming) || save.relicsEquipped.includes(incoming)) return false;
+  save.relicsEquipped[slot] = incoming;
+  return true;
+}
+
 // ─────────────────────────── Areas ───────────────────────────
 
 export function isAreaUnlocked(save: SaveData, id: AreaId): boolean {

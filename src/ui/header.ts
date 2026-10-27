@@ -15,6 +15,7 @@ export interface TopBarHost {
   soundOn(): boolean;
   toggleSound(): void;
   openSettings(): void;
+  openPause?(): void;
 }
 
 const SVG_NS = 'http://www.w3.org/2000/svg';
@@ -69,6 +70,7 @@ export class TopBar {
   private shard: Counter;
   private time: HTMLElement;
   private soundBtn: HTMLButtonElement;
+  private pauseBtn: HTMLButtonElement;
   private soundState: boolean | null = null;
 
   constructor(host: TopBarHost) {
@@ -97,6 +99,10 @@ export class TopBar {
       tip: '設定|サウンド・表示・セーブデータ',
       on: { click: () => this.host.openSettings() },
     }, gearSvg());
+    this.pauseBtn = h('button', { class: 'btn small tb-pause hidden',
+      attrs: { 'aria-label': '一時停止（Esc）' },
+      on: { click: () => this.host.openPause?.() },
+    }, '一時停止 ', h('span', { class: 'key-badge', text: 'Esc' }));
 
     this.el = h(
       'header',
@@ -111,6 +117,7 @@ export class TopBar {
       h(
         'div',
         { class: 'tb-right' },
+        this.pauseBtn,
         h('div', { class: 'tb-time', tip: 'プレイ時間' }, icon('clock', 2, 'tb-time-icon'), this.time),
         this.soundBtn,
         settingsBtn,
@@ -133,6 +140,7 @@ export class TopBar {
     const save = this.host.getSave();
     const live = this.host.liveLoot();
     const run = this.host.runArea();
+    toggleClass(this.pauseBtn, 'hidden', !run || !this.host.openPause);
     if (run) {
       setText(this.areaName, run.name);
       setText(this.areaSub, `${run.subtitle}・第${run.index + 1}の地`);

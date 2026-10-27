@@ -98,6 +98,7 @@ export function openRekindle(host: CampHost): void {
   const panel = h(
     'div',
     { class: 'camp-modal camp-rk', attrs: { role: 'dialog', 'aria-modal': 'true', 'aria-label': 'Rekindle' } },
+    h('div', { class: 'dialog-scroll', attrs: { tabindex: '0', 'aria-label': 'Rekindleで失うもの・引き継ぐもの・得るもの' } },
     h(
       'header',
       'camp-rk-head',
@@ -113,7 +114,8 @@ export function openRekindle(host: CampHost): void {
       h('section', 'camp-rk-col camp-rk-col--keep', h('h3', null, 'KEEP', h('small', null, '引き継ぐもの')), keep),
       h('section', 'camp-rk-col camp-rk-col--gain', h('h3', null, 'GAIN', h('small', null, '得るもの')), gain),
     ),
-    h('footer', 'camp-rk-foot', note, h('div', 'camp-rk-btns', cancel, confirm)),
+    ),
+    h('footer', 'camp-rk-foot dialog-footer', note, h('div', 'camp-rk-btns', cancel, confirm)),
   );
 
   let armed = false;

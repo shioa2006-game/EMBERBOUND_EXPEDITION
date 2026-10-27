@@ -1430,8 +1430,28 @@
 
 .camp-rk {
   width: 1040px;
-  padding: 0 0 18px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  padding: 0;
 }
+.camp-rk > .dialog-scroll { padding-bottom: 18px; }
+.camp-rk > .dialog-footer { margin: 0; padding: 14px 18px; }
+@media (max-height: 720px) {
+  .camp-rk .camp-rk-head { padding: 12px 18px; }
+  .camp-rk-head .camp-rk-flame { display: none; }
+}
+.camp-skill-desc { white-space: pre-line; }
+.camp-relic-help { color: var(--gold); font-size: var(--fs-s); margin-top: 10px; }
+.camp-swap { width: 760px; display: flex; flex-direction: column; overflow: hidden; }
+.camp-swap > .dialog-scroll { padding: 24px; }
+.camp-swap > .dialog-footer { display: flex; justify-content: flex-end; }
+.camp-swap-intro { margin: 12px 0 18px; }
+.camp-swap-choices { display: grid; gap: 12px; }
+.camp-swap-choice { display: grid; grid-template-columns: 32px minmax(0, 1fr) max-content; gap: 14px; padding: 14px; text-align: left; white-space: normal; }
+.camp-swap-choice b, .camp-swap-choice span span { display: block; }
+.camp-swap-choice span span { font-size: var(--fs-s); color: var(--text-dim); margin-top: 4px; }
+.camp-swap-label { color: var(--gold); white-space: nowrap; }
 
 .camp-rk-head {
   display: grid;

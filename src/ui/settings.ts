@@ -124,6 +124,7 @@ export function openSettings(host: SettingsHost): ModalHandle {
   const content = h(
     'div',
     { class: 'settings' },
+    h('div', { class: 'dialog-scroll', attrs: { tabindex: '0', 'aria-label': '設定項目' } },
     h('h2', { class: 'modal-title', text: '設定' }),
     h('section', { class: 'set-section' }, h('h3', { class: 'set-h', text: 'サウンド' }), sfxToggle, sfxVol.row, musicToggle, musicVol.row),
     h(
@@ -142,7 +143,8 @@ export function openSettings(host: SettingsHost): ModalHandle {
       h('div', { class: 'set-danger' }, resetBtn),
     ),
     h('div', { class: 'set-keys' }, h('span', { text: '操作：' }), h('span', { class: 'key-badge', text: '1-4' }), h('span', { text: 'スキル' }), h('span', { class: 'key-badge', text: 'Space' }), h('span', { text: 'Overdrive' }), h('span', { class: 'key-badge', text: 'Esc' }), h('span', { text: 'ポーズ' }), h('span', { text: '／ 敵をクリックでMark' })),
-    h('div', { class: 'modal-actions' }, closeBtn),
+    ),
+    h('footer', { class: 'modal-actions dialog-footer' }, closeBtn),
   );
   const m = host.modals.open(content, { className: 'modal-settings', label: '設定', focus: closeBtn });
   closeBtn.addEventListener('click', () => m.close());

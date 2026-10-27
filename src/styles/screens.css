@@ -709,12 +709,14 @@
     repeating-linear-gradient(0deg, rgba(0, 0, 0, 0.16) 0 2px, transparent 2px 4px);
 }
 .notice {
+  display: flex;
+  flex-direction: column;
   position: relative;
   width: min(780px, 100%);
   max-height: calc(100vh - 48px);
   max-height: calc(100dvh - 48px);
-  overflow: auto;
-  padding: 30px 36px 26px;
+  overflow: hidden;
+  padding: 0;
   text-align: center;
   background:
     radial-gradient(90% 60% at 50% 0%, rgba(255, 138, 61, 0.12), transparent 70%),
@@ -735,6 +737,7 @@
 .notice > .ember-field {
   z-index: 0;
 }
+.notice > .dialog-scroll { padding: 30px 36px 24px; }
 .nt-body,
 .nt-actions {
   position: relative;
@@ -770,7 +773,7 @@
 .nt-actions {
   display: flex;
   justify-content: center;
-  margin-top: 24px;
+  margin-top: 0;
 }
 .nt-continue {
   min-width: 240px;
@@ -1268,7 +1271,13 @@
 
 .modal-settings {
   width: min(660px, 100%);
+  display: flex;
+  padding: 0;
+  overflow: hidden;
 }
+.settings { display: flex; flex-direction: column; min-height: 0; width: 100%; }
+.settings > .dialog-scroll { padding: 24px 28px 18px; }
+.settings > .dialog-footer { margin-top: 0; }
 .set-section {
   padding: 12px 0;
   border-top: 2px dashed var(--line);
@@ -1510,6 +1519,9 @@
 }
 
 @media (max-height: 700px) {
+  .notice > .dialog-scroll { padding: 16px 24px; }
+  .notice .nt-head { margin-bottom: 12px; }
+  .notice .nt-preview { height: 210px; }
   .modal-result {
     padding-top: 16px;
   }

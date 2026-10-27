@@ -10,8 +10,13 @@ export function centerIn(layer: HTMLElement, target: Element): { x: number; y: n
 
 /** Rising floating text at (x, y) in `layer` (layer must be position: relative). */
 export function floatText(layer: HTMLElement, text: string, x: number, y: number, cls = ''): void {
+  // Cards below the scroll area use the persistent level display and toast instead.
+  if (y < 0 || y > layer.clientHeight) return;
   const el = h('span', { class: `camp-float ${cls}`.trim(), text, style: `left:${x}px;top:${y}px` });
   layer.appendChild(el);
+  // Reserve the animation's 1.15x peak width on both sides of the viewport.
+  const edge = el.offsetWidth * 1.15 / 2 + 12;
+  el.style.left = `${Math.max(edge, Math.min(layer.clientWidth - edge, x))}px`;
   const kill = () => el.remove();
   el.addEventListener('animationend', kill, { once: true });
   window.setTimeout(kill, 2000);
