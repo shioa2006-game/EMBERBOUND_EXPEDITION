@@ -20,6 +20,7 @@ export class ExpeditionTab implements TabView {
   private rekindleSlot: HTMLElement;
   private route: HTMLElement;
   private detail: HTMLElement;
+  private destination: HTMLElement;
   private shownArea: AreaId | null = null;
   private departBtn: HTMLButtonElement | null = null;
   private noticeRef: readonly Notice[] | null = null;
@@ -33,12 +34,24 @@ export class ExpeditionTab implements TabView {
     this.rekindleSlot = h('div', 'camp-rekindle-slot');
     this.route = h('nav', { class: 'camp-route', attrs: { 'aria-label': '遠征ルート' } });
     this.detail = h('section', 'camp-exp-detail');
+    this.destination = h('strong', 'camp-depart-destination');
+    this.departBtn = h('button', {
+      class: 'camp-btn camp-depart',
+      attrs: { type: 'button' },
+      on: { click: () => this.depart() },
+    }, h('span', 'camp-depart-main', '出発'), keycap('Space'));
     this.el = h(
       'div',
       'camp-page camp-page--expedition',
-      this.hints,
-      this.rekindleSlot,
-      h('div', 'camp-exp', this.route, this.detail),
+      h('div', { class: 'camp-exp-scroll', attrs: { tabindex: '0', 'aria-label': '遠征先の詳細' } },
+        this.hints,
+        this.rekindleSlot,
+        h('div', 'camp-exp', this.route, this.detail),
+      ),
+      h('footer', { class: 'camp-depart-row', attrs: { 'aria-label': '遠征の出発操作' } },
+        h('div', 'camp-depart-target', h('span', 'camp-label', '遠征先'), this.destination),
+        this.departBtn,
+      ),
     );
   }
 
@@ -377,17 +390,9 @@ export class ExpeditionTab implements TabView {
       );
     }
 
-    this.departBtn = h(
-      'button',
-      {
-        class: 'camp-btn camp-depart',
-        attrs: { type: 'button' },
-        on: { click: () => this.depart() },
-      },
-      h('span', 'camp-depart-main', '出発'),
-      h('span', 'camp-depart-sub', `${def.name}へ`),
-      keycap('Space'),
-    );
+    this.destination.textContent = def.name;
+    this.departBtn?.setAttribute('aria-label', `${def.name}へ出発`);
+    this.departBtn?.classList.remove('is-launching');
 
     append(this.detail, [
       banner,
@@ -396,7 +401,6 @@ export class ExpeditionTab implements TabView {
       tiles,
       boss,
       perks.childElementCount ? perks : null,
-      h('div', 'camp-depart-row', this.departBtn),
     ]);
   }
 

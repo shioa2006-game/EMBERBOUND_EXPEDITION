@@ -98,7 +98,10 @@ docs         DESIGN.md（企画）/ MECHANICS.md（実装仕様）/ BALANCE.md�
 | `tests/browser/storybook-characters.html` | 44種・64外見、味方の左右を含む4,202コマの描画・余白・アンカー検査と一覧 |
 | `tests/browser/storybook-battle.html` | 6エリアのボス戦、スキル、状態異常、撃破・戦闘不能の統合検査 |
 | `scripts/storybook-scenes-preview.html` | 全背景の構図・スクロール・接地を比較 |
+| `tests/browser/ui-layout.html` | 1440×900・1280×720・1024×600、序盤／全員加入後の野営地と帰還結果を検証。専用iframe内の実寸表示領域で主要ボタンの収まり・スクロール時の位置・通知や購入前後の安定性を計測（メモリ内のテストデータのみ使用） |
 
 Studioからの再取り込みは `node scripts/sync-storybook-vendor.mjs`。描画APIと装備差分はゲーム側で管理しています。制限されたWindows環境でVitestの一時ファイルが開けない場合は `npm test -- --pool=threads` で実行できます。
 
 変更前のソース一式は、作業端末のローカルバックアップ `backups/pre-storybook-20261027.zip` に保存しています（Git管理対象外）。確認画像は `docs/art/storybook-review/` にあります。
+
+出発タブは詳細情報だけがスクロールし、遠征先と出発ボタンは下部に常時表示します。帰還結果も操作欄を固定し、通知は内容に重ならない専用領域へ表示します。UIのサイズ別確認画像と30場面の検証結果は `docs/art/ui-review/` に保存しています。

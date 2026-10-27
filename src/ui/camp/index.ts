@@ -31,6 +31,7 @@ export class CampView implements ICampView {
   private el: HTMLElement | null = null;
   private tabBar: HTMLElement | null = null;
   private pagesEl: HTMLElement | null = null;
+  private guidance: HTMLElement | null = null;
   private fx: HTMLElement | null = null;
   private host: CampHost | null = null;
   private tabBtns = new Map<CampTab, HTMLButtonElement>();
@@ -100,7 +101,9 @@ export class CampView implements ICampView {
       this.pagesEl.appendChild(page.el);
     }
     this.fx = h('div', { class: 'camp-fx', attrs: { 'aria-hidden': 'true' } });
-    this.el = h('div', 'camp', this.tabBar, this.pagesEl, this.fx);
+    this.guidance = h('div', { class: 'camp-guidance', attrs: { 'aria-live': 'polite' } },
+      h('span', 'camp-guidance-default', '準備が整ったら「出発」タブから遠征へ。'));
+    this.el = h('div', 'camp', this.tabBar, this.guidance, this.pagesEl, this.fx);
     this.el.hidden = true;
     root.appendChild(this.el);
 
@@ -308,8 +311,12 @@ export class CampView implements ICampView {
     this.clearBubble();
     const btn = this.tabBtns.get(tab);
     if (!btn) return;
-    const el = h('span', 'camp-tab-bubble', text);
-    btn.appendChild(el);
+    const el = h('button', {
+      class: 'camp-guidance-action',
+      attrs: { type: 'button' },
+      on: { click: () => this.userSwitch(tab) },
+    }, text, ' →');
+    this.guidance?.appendChild(el);
     this.bubble = { tab, el };
   }
 

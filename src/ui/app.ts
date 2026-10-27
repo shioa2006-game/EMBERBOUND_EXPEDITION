@@ -21,6 +21,7 @@ import { openSettings } from './settings.ts';
 import { TitleScreen } from './title.ts';
 import { Toasts, type ToastKind } from './toast.ts';
 import { Tutorial } from './tutorial.ts';
+import { campSceneHeight } from './layout.ts';
 
 export type Screen = 'title' | 'battle' | 'camp';
 
@@ -295,12 +296,9 @@ export class App {
     }
   }
 
-  /** Camp scene strip height: an exact integer device-pixel scale of the 180px-tall scene (crisp pixels). */
+  /** Reserve space for camp controls on short screens; storybook art supports fractional scaling. */
   private updateCampStrip(): void {
-    const dpr = window.devicePixelRatio || 1;
-    const maxH = Math.max(150, Math.min(380, window.innerHeight * 0.34));
-    const scale = Math.max(1, Math.floor((maxH * dpr) / 180));
-    setVar(this.root, '--camp-strip', `${Math.ceil((180 * scale) / dpr) + 2}px`);
+    setVar(this.root, '--camp-strip', `${campSceneHeight(window.innerHeight)}px`);
   }
 
   /** Tint the letterbox around the canvas with the current area's palette. */

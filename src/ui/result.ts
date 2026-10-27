@@ -210,19 +210,23 @@ export function showResult(host: ResultHost, r: RunResult, notices: Notice[]): P
   // ── buttons
   const upgradeBtn = h('button', { class: 'btn primary big res-upgrade' }, h('span', { text: '強化する' }), h('span', { class: 'key-badge', text: 'Enter' }));
   const againBtn = h('button', { class: 'btn big res-again' }, h('span', { text: 'もう一度出発' }), h('span', { class: 'key-badge', text: 'Space' }));
+  const actionHint = h('p', { class: 'res-action-hint', text: 'Goldでヒーローを強化しよう！' });
+  actionHint.hidden = true;
 
   const content = h(
     'div',
     { class: `result ${headCls}` },
-    h('div', { class: 'res-head' }, h('div', { class: 'res-kicker', text: 'EXPEDITION RESULT' }), h('h2', { class: 'res-title', text: headText }), h('p', { class: 'res-sub', text: sub })),
-    newRecord ? h('div', { class: 'res-newrecord', text: `新記録！ ${AREAS[newRecord.area].name} ステージ ${newRecord.stage} に到達` }) : null,
-    stageTrack(r),
-    stats,
-    h('div', { class: 'res-section' }, h('div', { class: 'res-section-h', text: '獲得' }), h('div', { class: 'res-loot' }, ...lootItems), bonusRows.length ? h('div', { class: 'res-bonuses' }, ...bonusRows) : null),
-    recordRows.length ? h('div', { class: 'res-section' }, h('div', { class: 'res-section-h', text: 'ボス記録' }), ...recordRows) : null,
-    recap.length ? h('div', { class: 'res-section res-recap' }, h('div', { class: 'res-section-h', text: r.reason === 'wiped' ? '敗因と対策' : 'ふりかえり' }), ...recap.map(recapRow)) : null,
-    h('div', { class: 'res-section res-next' }, goalEl, lvEl),
-    h('div', { class: 'res-actions' }, againBtn, upgradeBtn),
+    h('div', { class: 'res-scroll', attrs: { tabindex: '0', 'aria-label': '遠征結果の詳細' } },
+      h('div', { class: 'res-head' }, h('div', { class: 'res-kicker', text: 'EXPEDITION RESULT' }), h('h2', { class: 'res-title', text: headText }), h('p', { class: 'res-sub', text: sub })),
+      newRecord ? h('div', { class: 'res-newrecord', text: `新記録！ ${AREAS[newRecord.area].name} ステージ ${newRecord.stage} に到達` }) : null,
+      stageTrack(r),
+      stats,
+      h('div', { class: 'res-section' }, h('div', { class: 'res-section-h', text: '獲得' }), h('div', { class: 'res-loot' }, ...lootItems), bonusRows.length ? h('div', { class: 'res-bonuses' }, ...bonusRows) : null),
+      recordRows.length ? h('div', { class: 'res-section' }, h('div', { class: 'res-section-h', text: 'ボス記録' }), ...recordRows) : null,
+      recap.length ? h('div', { class: 'res-section res-recap' }, h('div', { class: 'res-section-h', text: r.reason === 'wiped' ? '敗因と対策' : 'ふりかえり' }), ...recap.map(recapRow)) : null,
+      h('div', { class: 'res-section res-next' }, goalEl, lvEl),
+    ),
+    h('footer', { class: 'res-footer' }, actionHint, h('div', { class: 'res-actions' }, againBtn, upgradeBtn)),
   );
 
   // Levels are the core loop: open the party tab when Gold buys something, else the tree if a node is affordable.
@@ -262,7 +266,7 @@ export function showResult(host: ResultHost, r: RunResult, notices: Notice[]): P
     // first result: point the player at 強化する
     if (host.firstTime('battle.upgrade')) {
       upgradeBtn.classList.add('tut-pulse');
-      upgradeBtn.appendChild(h('span', { class: 'tut-bubble-inline', text: 'Goldでヒーローを強化しよう！' }));
+      actionHint.hidden = false;
     }
 
     // loot count-up

@@ -1,0 +1,539 @@
+[
+  {
+    "scenario": "early-expedition",
+    "measurements": {
+      "viewport": [
+        1440,
+        900
+      ],
+      "purchaseAvailable": true,
+      "departure": {
+        "x": 1202,
+        "y": 824,
+        "width": 220,
+        "height": 64,
+        "bottom": 888,
+        "right": 1422
+      },
+      "color": "rgb(255, 240, 210)",
+      "background": "linear-gradient(155deg, rgb(130, 80, 43), rgb(88, 51, 30))"
+    },
+    "failures": []
+  },
+  {
+    "scenario": "early-party",
+    "measurements": {
+      "viewport": [
+        1440,
+        900
+      ]
+    },
+    "failures": []
+  },
+  {
+    "scenario": "early-tree",
+    "measurements": {
+      "viewport": [
+        1440,
+        900
+      ]
+    },
+    "failures": []
+  },
+  {
+    "scenario": "early-result",
+    "measurements": {
+      "viewport": [
+        1440,
+        900
+      ],
+      "actions": [
+        {
+          "x": 488,
+          "y": 780.28125,
+          "width": 220,
+          "height": 52,
+          "bottom": 832.28125,
+          "right": 708
+        },
+        {
+          "x": 732,
+          "y": 780.28125,
+          "width": 220,
+          "height": 52,
+          "bottom": 832.28125,
+          "right": 952
+        }
+      ],
+      "scrollHeight": 685
+    },
+    "failures": []
+  },
+  {
+    "scenario": "early-result-plain",
+    "measurements": {
+      "viewport": [
+        1440,
+        900
+      ],
+      "actions": [
+        {
+          "x": 488,
+          "y": 761.03125,
+          "width": 220,
+          "height": 52,
+          "bottom": 813.03125,
+          "right": 708
+        },
+        {
+          "x": 732,
+          "y": 761.03125,
+          "width": 220,
+          "height": 52,
+          "bottom": 813.03125,
+          "right": 952
+        }
+      ],
+      "scrollHeight": 647
+    },
+    "failures": []
+  },
+  {
+    "scenario": "late-expedition",
+    "measurements": {
+      "viewport": [
+        1440,
+        900
+      ],
+      "purchaseAvailable": false,
+      "departure": {
+        "x": 1202,
+        "y": 824,
+        "width": 220,
+        "height": 64,
+        "bottom": 888,
+        "right": 1422
+      },
+      "color": "rgb(255, 240, 210)",
+      "background": "linear-gradient(155deg, rgb(130, 80, 43), rgb(88, 51, 30))"
+    },
+    "failures": []
+  },
+  {
+    "scenario": "late-party",
+    "measurements": {
+      "viewport": [
+        1440,
+        900
+      ]
+    },
+    "failures": []
+  },
+  {
+    "scenario": "late-tree",
+    "measurements": {
+      "viewport": [
+        1440,
+        900
+      ]
+    },
+    "failures": []
+  },
+  {
+    "scenario": "late-relics",
+    "measurements": {
+      "viewport": [
+        1440,
+        900
+      ]
+    },
+    "failures": []
+  },
+  {
+    "scenario": "late-result",
+    "measurements": {
+      "viewport": [
+        1440,
+        900
+      ],
+      "actions": [
+        {
+          "x": 488,
+          "y": 800,
+          "width": 220,
+          "height": 52,
+          "bottom": 852,
+          "right": 708
+        },
+        {
+          "x": 732,
+          "y": 800,
+          "width": 220,
+          "height": 52,
+          "bottom": 852,
+          "right": 952
+        }
+      ],
+      "scrollHeight": 861
+    },
+    "failures": []
+  },
+  {
+    "scenario": "early-expedition",
+    "measurements": {
+      "viewport": [
+        1280,
+        720
+      ],
+      "purchaseAvailable": true,
+      "departure": {
+        "x": 1042,
+        "y": 644,
+        "width": 220,
+        "height": 64,
+        "bottom": 708,
+        "right": 1262
+      },
+      "color": "rgb(255, 240, 210)",
+      "background": "linear-gradient(155deg, rgb(130, 80, 43), rgb(88, 51, 30))"
+    },
+    "failures": []
+  },
+  {
+    "scenario": "early-party",
+    "measurements": {
+      "viewport": [
+        1280,
+        720
+      ]
+    },
+    "failures": []
+  },
+  {
+    "scenario": "early-tree",
+    "measurements": {
+      "viewport": [
+        1280,
+        720
+      ]
+    },
+    "failures": []
+  },
+  {
+    "scenario": "early-result",
+    "measurements": {
+      "viewport": [
+        1280,
+        720
+      ],
+      "actions": [
+        {
+          "x": 408,
+          "y": 620,
+          "width": 220,
+          "height": 52,
+          "bottom": 672,
+          "right": 628
+        },
+        {
+          "x": 652,
+          "y": 620,
+          "width": 220,
+          "height": 52,
+          "bottom": 672,
+          "right": 872
+        }
+      ],
+      "scrollHeight": 685
+    },
+    "failures": []
+  },
+  {
+    "scenario": "early-result-plain",
+    "measurements": {
+      "viewport": [
+        1280,
+        720
+      ],
+      "actions": [
+        {
+          "x": 408,
+          "y": 620,
+          "width": 220,
+          "height": 52,
+          "bottom": 672,
+          "right": 628
+        },
+        {
+          "x": 652,
+          "y": 620,
+          "width": 220,
+          "height": 52,
+          "bottom": 672,
+          "right": 872
+        }
+      ],
+      "scrollHeight": 647
+    },
+    "failures": []
+  },
+  {
+    "scenario": "late-expedition",
+    "measurements": {
+      "viewport": [
+        1280,
+        720
+      ],
+      "purchaseAvailable": false,
+      "departure": {
+        "x": 1042,
+        "y": 644,
+        "width": 220,
+        "height": 64,
+        "bottom": 708,
+        "right": 1262
+      },
+      "color": "rgb(255, 240, 210)",
+      "background": "linear-gradient(155deg, rgb(130, 80, 43), rgb(88, 51, 30))"
+    },
+    "failures": []
+  },
+  {
+    "scenario": "late-party",
+    "measurements": {
+      "viewport": [
+        1280,
+        720
+      ]
+    },
+    "failures": []
+  },
+  {
+    "scenario": "late-tree",
+    "measurements": {
+      "viewport": [
+        1280,
+        720
+      ]
+    },
+    "failures": []
+  },
+  {
+    "scenario": "late-relics",
+    "measurements": {
+      "viewport": [
+        1280,
+        720
+      ]
+    },
+    "failures": []
+  },
+  {
+    "scenario": "late-result",
+    "measurements": {
+      "viewport": [
+        1280,
+        720
+      ],
+      "actions": [
+        {
+          "x": 408,
+          "y": 620,
+          "width": 220,
+          "height": 52,
+          "bottom": 672,
+          "right": 628
+        },
+        {
+          "x": 652,
+          "y": 620,
+          "width": 220,
+          "height": 52,
+          "bottom": 672,
+          "right": 872
+        }
+      ],
+      "scrollHeight": 861
+    },
+    "failures": []
+  },
+  {
+    "scenario": "early-expedition",
+    "measurements": {
+      "viewport": [
+        1024,
+        600
+      ],
+      "purchaseAvailable": true,
+      "departure": {
+        "x": 786,
+        "y": 524,
+        "width": 220,
+        "height": 64,
+        "bottom": 588,
+        "right": 1006
+      },
+      "color": "rgb(255, 240, 210)",
+      "background": "linear-gradient(155deg, rgb(130, 80, 43), rgb(88, 51, 30))"
+    },
+    "failures": []
+  },
+  {
+    "scenario": "early-party",
+    "measurements": {
+      "viewport": [
+        1024,
+        600
+      ]
+    },
+    "failures": []
+  },
+  {
+    "scenario": "early-tree",
+    "measurements": {
+      "viewport": [
+        1024,
+        600
+      ]
+    },
+    "failures": []
+  },
+  {
+    "scenario": "early-result",
+    "measurements": {
+      "viewport": [
+        1024,
+        600
+      ],
+      "actions": [
+        {
+          "x": 280,
+          "y": 500,
+          "width": 220,
+          "height": 52,
+          "bottom": 552,
+          "right": 500
+        },
+        {
+          "x": 524,
+          "y": 500,
+          "width": 220,
+          "height": 52,
+          "bottom": 552,
+          "right": 744
+        }
+      ],
+      "scrollHeight": 676
+    },
+    "failures": []
+  },
+  {
+    "scenario": "early-result-plain",
+    "measurements": {
+      "viewport": [
+        1024,
+        600
+      ],
+      "actions": [
+        {
+          "x": 280,
+          "y": 500,
+          "width": 220,
+          "height": 52,
+          "bottom": 552,
+          "right": 500
+        },
+        {
+          "x": 524,
+          "y": 500,
+          "width": 220,
+          "height": 52,
+          "bottom": 552,
+          "right": 744
+        }
+      ],
+      "scrollHeight": 637
+    },
+    "failures": []
+  },
+  {
+    "scenario": "late-expedition",
+    "measurements": {
+      "viewport": [
+        1024,
+        600
+      ],
+      "purchaseAvailable": false,
+      "departure": {
+        "x": 786,
+        "y": 524,
+        "width": 220,
+        "height": 64,
+        "bottom": 588,
+        "right": 1006
+      },
+      "color": "rgb(255, 240, 210)",
+      "background": "linear-gradient(155deg, rgb(130, 80, 43), rgb(88, 51, 30))"
+    },
+    "failures": []
+  },
+  {
+    "scenario": "late-party",
+    "measurements": {
+      "viewport": [
+        1024,
+        600
+      ]
+    },
+    "failures": []
+  },
+  {
+    "scenario": "late-tree",
+    "measurements": {
+      "viewport": [
+        1024,
+        600
+      ]
+    },
+    "failures": []
+  },
+  {
+    "scenario": "late-relics",
+    "measurements": {
+      "viewport": [
+        1024,
+        600
+      ]
+    },
+    "failures": []
+  },
+  {
+    "scenario": "late-result",
+    "measurements": {
+      "viewport": [
+        1024,
+        600
+      ],
+      "actions": [
+        {
+          "x": 280,
+          "y": 500,
+          "width": 220,
+          "height": 52,
+          "bottom": 552,
+          "right": 500
+        },
+        {
+          "x": 524,
+          "y": 500,
+          "width": 220,
+          "height": 52,
+          "bottom": 552,
+          "right": 744
+        }
+      ],
+      "scrollHeight": 851
+    },
+    "failures": []
+  }
+]

@@ -385,38 +385,29 @@
   animation: camp-tab-reveal 0.55s cubic-bezier(0.2, 1.6, 0.4, 1) both;
 }
 
-.camp-tab-bubble {
-  position: absolute;
-  z-index: 5;
-  left: 50%;
-  top: calc(100% + 10px);
-  padding: 6px 12px;
-  border: 2px solid var(--gold);
-  border-radius: 6px;
-  background: #2a1d10;
-  color: var(--gold);
+.camp-guidance {
+  flex: none;
+  display: flex;
+  align-items: center;
+  height: 44px;
+  padding: 0 18px;
+  background: #182126;
+  border-bottom: 1px solid var(--line);
+  color: var(--text-dim);
   font-size: var(--fs-s);
-  white-space: nowrap;
-  box-shadow: var(--shadow), var(--glow-gold);
-  transform: translateX(-50%);
-  pointer-events: none;
-  animation: camp-bubble 1.4s ease-in-out infinite;
 }
-
-.camp-tab-bubble::before {
-  content: '';
-  position: absolute;
-  left: 50%;
-  top: -8px;
-  border: 7px solid transparent;
-  border-top: 0;
-  border-bottom-color: var(--gold);
-  transform: translateX(-50%);
+.camp-guidance:has(.camp-guidance-action) .camp-guidance-default { display: none; }
+.camp-guidance-action {
+  padding: 4px 8px;
+  border: 1px solid #c8a66a;
+  border-radius: 4px;
+  background: #493720;
+  color: #fff0d2;
+  font: inherit;
+  cursor: pointer;
 }
-
-.camp-tabs:has(.camp-tab-bubble) {
-  overflow: visible;
-}
+.camp-guidance-action:hover { background: #5b4428; }
+.camp-guidance-action:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
 
 /* ───────────────────────── pages ───────────────────────── */
 
@@ -432,6 +423,25 @@
   padding: 14px 18px 22px;
   min-height: 100%;
 }
+
+/* Only the expedition details scroll; its action row always occupies its own space. */
+.camp-pages:has(> .camp-page--expedition:not([hidden])) { overflow: hidden; }
+.camp-page--expedition {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  padding: 0;
+}
+.camp-exp-scroll {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+  padding: 14px 18px 22px;
+}
+.camp-exp-scroll:focus-visible { outline: 2px solid var(--gold-dim); outline-offset: -3px; }
 
 .camp-page.is-enter-right {
   animation: camp-in-right 0.28s cubic-bezier(0.2, 0.9, 0.3, 1) both;
@@ -1250,12 +1260,21 @@
 
 .camp-depart-row {
   display: flex;
-  justify-content: flex-end;
-  margin-top: 4px;
+  flex: none;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 12px 18px;
+  border-top: 1px solid #b69a68;
+  background: #1b252b;
+  box-shadow: 0 -4px 14px #0005;
 }
+.camp-depart-target { display: grid; gap: 2px; min-width: 0; }
+.camp-depart-destination { font-family: var(--font-story); overflow-wrap: anywhere; }
 
 .camp-depart {
-  min-width: min(100%, 320px);
+  min-width: 220px;
+  flex: none;
   min-height: 64px;
   padding: 8px 22px;
   border: 2px solid #ffd8a0;

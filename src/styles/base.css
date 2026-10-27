@@ -128,7 +128,7 @@ canvas {
   display: none;
 }
 .app[data-screen='camp'] .viewport-wrap {
-  /* set by the shell: an exact integer device-pixel scale of the 400x180 camp scene */
+  /* The shell scales this illustration with viewport height to leave room for controls. */
   height: var(--camp-strip, 184px);
   border-bottom: 2px solid var(--line);
   transition: height 0.25s ease;
