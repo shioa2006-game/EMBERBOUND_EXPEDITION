@@ -1,0 +1,53 @@
+/* Ink, old vellum and tarnished brass; the colour cues for combat remain distinct. */
+:root {
+  --bg-0: #0d1115;
+  --bg-1: #161b20;
+  --bg-2: #20272b;
+  --bg-3: #2d3435;
+  --line: #4b4940;
+  --line-hi: #8b7b5b;
+  --text: #eee4cd;
+  --text-dim: #c5bfaf;
+  --text-faint: #9e9c8f;
+
+  --ember: #ff8a3d;
+  --ember-hi: #ffb35a;
+  --gold: #e9c67b;
+  --gold-dim: #b19661;
+  --shard: #6fe3ff;
+  --hp: #e04848;
+  --hp-hi: #ff6a6a;
+  --barrier: #fff1b8;
+  --ward: #7fe0e8;
+  --heal: #7dff8a;
+  --mark: #7dff8a;
+  --interrupt: #ffa630; /* orange: can be interrupted */
+  --unstoppable: #b76bff; /* purple: must be absorbed */
+  --good: #7dff8a;
+  --warn: #ffcf4a;
+  --bad: #ff5a5a;
+
+  --c-guardian: #5aa0ff;
+  --c-ranger: #5fd068;
+  --c-arcanist: #c070ff;
+  --c-oracle: #ffd95a;
+
+  --font-ui: 'Yu Gothic UI', 'Hiragino Kaku Gothic ProN', 'Meiryo', system-ui, sans-serif;
+  /* The legacy variable name is shared by all title/name components. */
+  --font-pixel: 'Palatino Linotype', 'Book Antiqua', 'Yu Mincho', 'Hiragino Mincho ProN', Georgia, serif;
+  --font-num: 'Segoe UI', 'Helvetica Neue', sans-serif;
+  --font-story: 'Palatino Linotype', 'Book Antiqua', 'Yu Mincho', 'Hiragino Mincho ProN', Georgia, serif;
+
+  --fs-xs: 13px;
+  --fs-s: 15px;
+  --fs-m: 17px;
+  --fs-l: 22px;
+  --fs-xl: 30px;
+  --fs-xxl: 44px;
+
+  --radius: 9px 5px 8px 4px;
+  --shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
+  --glow-ember: 0 0 16px rgba(255, 138, 61, 0.3);
+  --glow-gold: 0 0 16px rgba(233, 198, 123, 0.3);
+  --paper-grain: repeating-linear-gradient(16deg, rgba(228, 215, 177, 0.023) 0 1px, transparent 1px 5px), repeating-linear-gradient(101deg, rgba(0, 0, 0, 0.07) 0 1px, transparent 1px 7px);
+}

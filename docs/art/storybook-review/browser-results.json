@@ -1,0 +1,70 @@
+{
+  "characters": {
+    "characters": 44,
+    "appearances": 64,
+    "heroFacings": [
+      "R",
+      "L"
+    ],
+    "checkedFrames": 4202,
+    "elapsedMs": 47788,
+    "failures": [],
+    "projectiles": [
+      {
+        "key": "ranger",
+        "attack": {
+          "x": -0.12975060488071957,
+          "y": -11.766030153654743
+        },
+        "cast": {
+          "x": 4.166140132798566,
+          "y": -13.912877677016764
+        },
+        "release": 0.15
+      },
+      {
+        "key": "drowned_archer",
+        "attack": {
+          "x": 0.10760282716310297,
+          "y": -9.757657671270264
+        },
+        "cast": null,
+        "release": 0.15
+      },
+      {
+        "key": "rime_archer",
+        "attack": {
+          "x": -0.2061844559199124,
+          "y": -10.245350071771712
+        },
+        "cast": null,
+        "release": 0.15
+      },
+      {
+        "key": "shadow_ranger",
+        "attack": {
+          "x": -0.34806138129198805,
+          "y": -17.29524508475055
+        },
+        "cast": {
+          "x": -6.549878064482214,
+          "y": -20.401358946234577
+        },
+        "release": 0.15
+      }
+    ],
+    "cache": {
+      "frames": 960,
+      "bytes": 67085192,
+      "maxBytes": 67108864,
+      "bakedFrames": 4202,
+      "bakeMilliseconds": 16699.399999976158
+    }
+  },
+  "battle": {
+    "scenarios": 6,
+    "events": 624,
+    "failures": []
+  },
+  "distributionErrors": []
+}

@@ -1,0 +1,12 @@
+node_modules
+dist
+*.log
+
+# Local backups and workstation settings
+/backups/
+/.claude/
+.env
+.env.*
+!.env.example
+.DS_Store
+Thumbs.db

@@ -1,0 +1,38 @@
+[
+  {
+    "id": "ashwood",
+    "coldMs": 22.5,
+    "warmFrameMs": 10.42,
+    "opaquePixels": 1152000
+  },
+  {
+    "id": "ruins",
+    "coldMs": 195.3,
+    "warmFrameMs": 10.01,
+    "opaquePixels": 1152000
+  },
+  {
+    "id": "glimmer",
+    "coldMs": 157.4,
+    "warmFrameMs": 9.78,
+    "opaquePixels": 1152000
+  },
+  {
+    "id": "rimeholt",
+    "coldMs": 126.7,
+    "warmFrameMs": 9.99,
+    "opaquePixels": 1152000
+  },
+  {
+    "id": "hollow",
+    "coldMs": 167.6,
+    "warmFrameMs": 9.63,
+    "opaquePixels": 1152000
+  },
+  {
+    "id": "heart",
+    "coldMs": 174.6,
+    "warmFrameMs": 10.54,
+    "opaquePixels": 1152000
+  }
+]
