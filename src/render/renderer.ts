@@ -28,6 +28,10 @@ import { FxWorld, type UnitVis } from './fx/world.ts';
 import { drawAreaBackground, drawAreaForeground, drawCampScene, drawTitleScene, iconCanvas, type IconKey } from './sprites/index.ts';
 
 type Mode = 'none' | 'battle' | 'camp' | 'title';
+/** Vertical anchor when the camp scene is cropped: keeps the party at the fire in view. */
+const CAMP_FOCUS_Y = 0.8;
+/** The camp frame is close-cropped around the fire so the party reads at small sizes. */
+const CAMP_ZOOM = 1.3;
 
 const SKIP_TEXT = new Set(['PERFECT', 'LAST LIGHT', '中断可能！']);
 
@@ -136,20 +140,22 @@ export class Renderer implements IRenderer {
     this.dpr = dpr;
     const cw = ct.clientWidth;
     const ch = ct.clientHeight;
+    // The camp illustration fills its frame (cropping toward the campfire line); battles always show the whole stage.
+    const cover = this.mode === 'camp';
     let cssW = WORLD_W;
     let cssH = WORLD_H;
     if (cw > 0 && ch > 0) {
-      const fit = Math.min(cw / WORLD_W, ch / WORLD_H);
+      const fit = cover ? Math.max(cw / WORLD_W, ch / WORLD_H) * CAMP_ZOOM : Math.min(cw / WORLD_W, ch / WORLD_H);
       cssW = WORLD_W * fit;
       cssH = WORLD_H * fit;
     }
     const left = Math.round(((cw - cssW) / 2) * dpr) / dpr;
-    const top = Math.round(((ch - cssH) / 2) * dpr) / dpr;
+    const top = Math.round(((ch - cssH) * (cover ? CAMP_FOCUS_Y : 0.5)) * dpr) / dpr;
     for (const c of [world, overlay]) {
       c.style.width = `${cssW}px`;
       c.style.height = `${cssH}px`;
-      c.style.left = `${Math.max(0, left)}px`;
-      c.style.top = `${Math.max(0, top)}px`;
+      c.style.left = `${cover ? left : Math.max(0, left)}px`;
+      c.style.top = `${cover ? top : Math.max(0, top)}px`;
     }
     const ow = Math.max(1, Math.round(cssW * dpr));
     const oh = Math.max(1, Math.round(cssH * dpr));
@@ -165,6 +171,13 @@ export class Renderer implements IRenderer {
     if (this.buf && (this.buf.width !== ww || this.buf.height !== wh)) { this.buf.width = ww; this.buf.height = wh; }
     this.overlayDirty = true;
     this.loot.resize();
+  }
+
+  /** Scene switches change how the canvas fits its frame (see resize). */
+  private setMode(m: Mode): void {
+    const refit = (m === 'camp') !== (this.mode === 'camp');
+    this.mode = m;
+    if (refit) this.resize();
   }
 
   setSettings(s: RenderSettings): void {
@@ -207,8 +220,10 @@ export class Renderer implements IRenderer {
     this.introDark = 0;
     this.endDark = 0;
     this.endDarkTarget = 0;
-    if (this.mode !== 'battle') this.modeFade = 1;
-    this.mode = 'battle';
+    if (this.mode !== 'battle') {
+      this.modeFade = 1;
+      this.setMode('battle');
+    }
   }
 
   timeScale(): number {
@@ -911,7 +926,7 @@ export class Renderer implements IRenderer {
     if (!out || !g || !o || !this.buf) return;
     if (this.battle !== battle) this.beginBattle(battle);
     if (this.mode !== 'battle') {
-      this.mode = 'battle';
+      this.setMode('battle');
       this.modeFade = 1;
     }
     const W = this.W;
@@ -1070,7 +1085,7 @@ export class Renderer implements IRenderer {
     const g = this.wctx;
     if (!g) return;
     if (this.mode !== 'camp') {
-      this.mode = 'camp';
+      this.setMode('camp');
       this.modeFade = 1;
       this.sceneTime = 0;
     }
@@ -1100,7 +1115,7 @@ export class Renderer implements IRenderer {
     const g = this.wctx;
     if (!g) return;
     if (this.mode !== 'title') {
-      this.mode = 'title';
+      this.setMode('title');
       this.modeFade = 1;
       this.sceneTime = 0;
     }

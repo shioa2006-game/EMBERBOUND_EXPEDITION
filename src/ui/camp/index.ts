@@ -1,4 +1,5 @@
-// Camp screens (between runs): 出発 / パーティ / スキルツリー / レリック.
+// Camp screens (between runs): 遠征 / パーティ / スキルツリー / レリック, beside a stage column
+// (party summary + the 出発 control shared by every tab).
 // Mounted by the app shell: campView.mount(rootEl, ctx) then show(tab?, notices?).
 import '../../styles/camp.css';
 import type { SfxName } from '../../audio/api.ts';
@@ -12,18 +13,21 @@ import { ExpeditionTab } from './expedition.ts';
 import type { CampHost, TabView } from './host.ts';
 import { PartyTab } from './party.ts';
 import { RelicsTab } from './relics.ts';
+import { CampSide } from './side.ts';
 import { TreeTab } from './tree.ts';
 
 const TAB_ORDER: CampTab[] = ['expedition', 'party', 'tree', 'relics'];
 
 const TAB_META: Record<CampTab, { label: string; icon: IconKey }> = {
-  expedition: { label: '出発', icon: 'lantern' },
+  expedition: { label: '遠征', icon: 'lantern' },
   party: { label: 'パーティ', icon: 'sword' },
   tree: { label: 'スキルツリー', icon: 'ember' },
   relics: { label: 'レリック', icon: 'shard' },
 };
 
-const HOVER_SELECTOR = '.camp-btn, .camp-tab, .camp-area, .camp-goal-btn, .camp-slot.is-filled';
+const DEPART_GUARD_MS = 600;
+
+const HOVER_SELECTOR = '.camp-btn, .camp-tab, .camp-area, .camp-goal-btn, .camp-slot.is-filled, .camp-side-party';
 
 export class CampView implements ICampView {
   private ctx: CampContext | null = null;
@@ -31,7 +35,7 @@ export class CampView implements ICampView {
   private el: HTMLElement | null = null;
   private tabBar: HTMLElement | null = null;
   private pagesEl: HTMLElement | null = null;
-  private guidance: HTMLElement | null = null;
+  private side: CampSide | null = null;
   private fx: HTMLElement | null = null;
   private host: CampHost | null = null;
   private tabBtns = new Map<CampTab, HTMLButtonElement>();
@@ -51,6 +55,7 @@ export class CampView implements ICampView {
   private hoverAt = 0;
   private refreshing = false;
   private refreshCount = 0;
+  private shownAt = 0;
 
   // ─────────────────────────── ICampView ───────────────────────────
 
@@ -101,9 +106,8 @@ export class CampView implements ICampView {
       this.pagesEl.appendChild(page.el);
     }
     this.fx = h('div', { class: 'camp-fx', attrs: { 'aria-hidden': 'true' } });
-    this.guidance = h('div', { class: 'camp-guidance', attrs: { 'aria-live': 'polite' } },
-      h('span', 'camp-guidance-default', '準備が整ったら「出発」タブから遠征へ。'));
-    this.el = h('div', 'camp', this.tabBar, this.guidance, this.pagesEl, this.fx);
+    this.side = new CampSide(host);
+    this.el = h('div', 'camp', this.side.el, this.tabBar, this.pagesEl, this.side.cta, this.fx);
     this.el.hidden = true;
     root.appendChild(this.el);
 
@@ -133,11 +137,13 @@ export class CampView implements ICampView {
     if (!this.el || !this.ctx) return;
     this.syncSaveIdentity();
     this.visible = true;
+    this.shownAt = performance.now();
     this.el.hidden = false;
     this.notices = notices ? notices.slice() : [];
     if (this.notices.length) this.applyNotices();
     this.modsCache = null;
     this.syncTabs();
+    this.side?.update();
     const avail = this.availableTabs();
     const target = tab && avail.includes(tab) ? tab : avail.includes(this.current) ? this.current : 'expedition';
     this.switchTo(target, 0, true);
@@ -161,6 +167,7 @@ export class CampView implements ICampView {
       this.syncTabs();
       if (!this.availableTabs().includes(this.current)) this.switchTo('expedition', 0, true);
       else if (this.visible) this.pages.get(this.current)?.update();
+      this.side?.update();
       this.syncBadges();
     } finally {
       this.refreshing = false;
@@ -210,6 +217,7 @@ export class CampView implements ICampView {
       switchTab: (tab) => {
         if (this.availableTabs().includes(tab)) this.switchTo(tab, 0, false);
       },
+      depart: () => this.side?.depart(),
       fxLayer: () => this.fx!,
     };
   }
@@ -318,11 +326,11 @@ export class CampView implements ICampView {
     const btn = this.tabBtns.get(tab);
     if (!btn) return;
     const el = h('button', {
-      class: 'camp-guidance-action',
+      class: 'camp-tabs-bubble',
       attrs: { type: 'button' },
       on: { click: () => this.userSwitch(tab) },
     }, text, ' →');
-    this.guidance?.appendChild(el);
+    this.tabBar?.appendChild(el);
     this.bubble = { tab, el };
   }
 
@@ -409,8 +417,18 @@ export class CampView implements ICampView {
     }
     // A focused button (keyboard navigation) keeps its native Space/Enter behaviour.
     if ((k === ' ' || k === 'Enter') && t && t.closest('button, a, [role="button"], summary')) return;
+    // a Space still being mashed from the battle (Overdrive) right after arriving does not start a new run
+    if (k === ' ' && performance.now() - this.shownAt < DEPART_GUARD_MS) {
+      e.preventDefault();
+      return;
+    }
     const page = this.pages.get(this.current);
     if (page && page.onKey(e)) e.preventDefault();
+    else if (k === ' ') {
+      // 出発 works from every tab (the control is always on screen)
+      this.side?.depart();
+      e.preventDefault();
+    }
   };
 
   /** Pointer clicks should not leave focus on camp buttons (keeps Space = 出発 working). */

@@ -1,6 +1,6 @@
 // Shared plumbing between CampView and its tab pages.
 import type { SfxName } from '../../audio/api.ts';
-import type { Notice } from '../../core/state.ts';
+import { frontierArea, type Notice } from '../../core/state.ts';
 import type { AreaId, HeroId, Mods, SaveData, TreeBranch, TreeNodeDef } from '../../core/types.ts';
 import type { CampContext, CampTab } from '../contracts.ts';
 
@@ -21,6 +21,8 @@ export interface CampHost {
   /** Open a modal inside the camp. Returns a close function. */
   openModal(panel: HTMLElement, onClose?: () => void): () => void;
   switchTab(tab: CampTab): void;
+  /** Start a run to the selected area (the departure control is shared by every tab). */
+  depart(): void;
   /** Layer for floating texts / bursts that may overflow cards. */
   fxLayer(): HTMLElement;
 }
@@ -91,6 +93,11 @@ export function nodeColor(n: TreeNodeDef): string {
   if (n.pair && n.pair.length === 2) return HERO_COLOR[n.pair[0]];
   if (n.id === 'emberbond') return '#ff5a7a';
   return BRANCH_COLOR[n.branch];
+}
+
+/** The area a departure goes to: the selection if it is open, else the frontier. */
+export function departureArea(save: SaveData): AreaId {
+  return save.areas[save.selectedArea]?.unlocked ? save.selectedArea : frontierArea(save);
 }
 
 export function noticeAreas(notices: readonly Notice[], kinds: Notice['kind'][]): Set<AreaId> {

@@ -34,6 +34,7 @@ export class RelicsTab implements TabView {
   private shardVal: HTMLElement;
   private slotsEl: HTMLElement;
   private slotsLabel: HTMLElement;
+  private slotNote: HTMLElement;
   private info: HTMLElement;
   private grid: HTMLElement;
 
@@ -43,6 +44,7 @@ export class RelicsTab implements TabView {
     this.shardVal = h('span', 'camp-purse-val camp-num camp-shard', '0');
     this.slotsLabel = h('span', 'camp-num', '');
     this.slotsEl = h('div', 'camp-slots');
+    this.slotNote = h('span', 'camp-slot-note');
     this.info = h('div', 'camp-relic-info');
     this.grid = h('div', 'camp-relic-grid');
     this.el = h(
@@ -53,7 +55,7 @@ export class RelicsTab implements TabView {
         'div',
         'camp-relic-head',
         h('div', 'camp-purse camp-purse--shard', icon('shard', 32), h('div', null, h('div', 'camp-label', 'Relic Shard'), this.shardVal)),
-        h('div', 'camp-slot-box', h('div', 'camp-label', '装備枠 ', this.slotsLabel), this.slotsEl),
+        h('div', 'camp-slot-box', h('div', 'camp-slot-title', h('span', 'camp-label', '装備枠 ', this.slotsLabel), this.slotNote), this.slotsEl),
       ),
       this.info,
       this.grid,
@@ -118,6 +120,7 @@ export class RelicsTab implements TabView {
     // cards
     clear(this.grid);
     const full = save.relicsEquipped.length >= slots;
+    this.slotNote.textContent = full ? '満杯：カードの「入れ替える」で交換できる' : '購入したレリックは空き枠に自動で装備される';
     for (const r of RELIC_LIST) {
       const isOwned = save.relicsOwned.includes(r.id);
       const isEq = save.relicsEquipped.includes(r.id);
@@ -154,7 +157,6 @@ export class RelicsTab implements TabView {
             h('div', 'camp-relic-name', r.name),
             h('span', 'camp-chip camp-chip--build', r.build),
             h('p', 'camp-relic-desc', r.desc),
-            !isEq ? h('p', 'camp-relic-help', full ? '装備枠が満杯です。装備中のレリックと交換できます。' : !isOwned ? '購入すると空き枠に自動で装備します。' : '空き枠に装備できます。') : null,
           ),
           h('div', 'camp-relic-foot', isOwned ? h('span', 'camp-relic-state', isEq ? '装備中' : '所持') : h('span', 'camp-dim', '未所持'), action),
         ),

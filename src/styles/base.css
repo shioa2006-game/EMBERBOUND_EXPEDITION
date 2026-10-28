@@ -119,8 +119,13 @@ canvas {
   display: none;
 }
 
-/* camp: area strip on top, camp panel below */
+/* camp: on narrow windows the illustration is a strip above the camp panel */
 .app[data-screen='camp'] {
+  /* Shared with camp.css: the side column reserves exactly the frame the scene is drawn into. */
+  --camp-gap: 14px;
+  --camp-side: clamp(300px, 32vw, 620px);
+  --camp-scene-w: calc(var(--camp-side) - 2 * var(--camp-gap));
+  --camp-scene-h: calc(var(--camp-scene-w) * 0.45);
   grid-template-rows: auto auto minmax(0, 1fr);
   grid-template-areas: 'top' 'view' 'camp';
 }
@@ -128,8 +133,7 @@ canvas {
   display: none;
 }
 .app[data-screen='camp'] .viewport-wrap {
-  /* The shell scales this illustration with viewport height to leave room for controls. */
-  height: var(--camp-strip, 184px);
+  height: min(45vw, var(--camp-strip, 184px));
   border-bottom: 2px solid var(--line);
   transition: height 0.25s ease;
 }
@@ -138,6 +142,30 @@ canvas {
   height: 0;
   border-bottom-width: 0;
   overflow: hidden;
+}
+
+/* wide windows: a stage column (scene, party, departure) beside the tab panel */
+@media (min-width: 900px) {
+  .app[data-screen='camp'] {
+    grid-template-rows: auto minmax(0, 1fr);
+    grid-template-areas: 'top' 'camp';
+  }
+  .app[data-screen='camp'] .viewport-wrap {
+    grid-area: camp;
+    align-self: start;
+    justify-self: start;
+    z-index: 3;
+    width: var(--camp-scene-w);
+    height: var(--camp-scene-h);
+    margin: var(--camp-gap) 0 0 var(--camp-gap);
+    border: 1px solid #9c896470;
+    border-radius: 10px 4px 9px 4px;
+    box-shadow: 0 6px 18px #0006;
+    transition: none;
+  }
+  .app[data-screen='camp'][data-camp-tab='tree'] .viewport-wrap {
+    visibility: hidden;
+  }
 }
 
 /* title: backdrop fills the window */

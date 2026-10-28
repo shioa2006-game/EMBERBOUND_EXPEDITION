@@ -205,11 +205,10 @@ button, input, .camp-num, .cur-value, .res-stat-v { font-variant-numeric: tabula
 .camp-depart .camp-kbd { background: #332317; color: #fff0d2; border-color: #b49869; }
 
 @media (max-width: 600px) {
-  .camp-depart-row { gap: 8px; padding: 10px 12px; }
+  .camp-cta { gap: 8px; padding: 10px 12px; }
   .camp-depart { min-width: 132px; min-height: 56px; padding: 8px 12px; }
   .camp-depart-main { font-size: 22px; }
   .camp-depart .camp-kbd { display: none; }
-  .camp-guidance { padding: 0 12px; font-size: 12px; }
   .res-scroll { padding: 16px 16px 12px; }
   .res-footer { padding: 12px 16px; }
   .res-actions { gap: 8px; }

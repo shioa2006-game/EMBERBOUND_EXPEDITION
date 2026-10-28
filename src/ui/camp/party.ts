@@ -1,4 +1,5 @@
-// パーティ / Party tab: hero cards with stats, skills, milestones and Gold level purchases.
+// パーティ / Party tab: one row per hero with stats, milestone and Gold level purchases.
+// Skill texts show beside the row on wide panels, or below it when 「スキル説明」 is toggled.
 import { BAL, gearTier, nextMilestone } from '../../core/balance.ts';
 import {
   buyLevels,
@@ -100,6 +101,7 @@ export class PartyTab implements TabView {
   private power: HTMLElement;
   private evenBtn: HTMLButtonElement;
   private evenSub: HTMLElement;
+  private detailBtn: HTMLButtonElement;
   private cards = new Map<HeroId, Card>();
   private signature = '';
   private preview: Preview = null;
@@ -130,6 +132,15 @@ export class PartyTab implements TabView {
       this.evenSub,
     );
     this.grid = h('div', 'camp-party-grid');
+    this.detailBtn = h(
+      'button',
+      {
+        class: 'camp-btn camp-btn--small camp-party-detail',
+        attrs: { type: 'button', 'aria-pressed': 'false' },
+        on: { click: () => this.toggleDetail() },
+      },
+      'スキル説明',
+    );
     this.el = h(
       'div',
       'camp-page camp-page--party',
@@ -139,10 +150,18 @@ export class PartyTab implements TabView {
         'camp-party-head',
         h('div', 'camp-purse camp-purse--gold', icon('gold', 32), h('div', null, h('div', 'camp-label', '所持Gold'), this.goldVal)),
         this.power,
+        this.detailBtn,
         this.evenBtn,
       ),
       this.grid,
     );
+  }
+
+  private toggleDetail(): void {
+    const on = !this.grid.classList.contains('is-detailed');
+    this.grid.classList.toggle('is-detailed', on);
+    this.detailBtn.setAttribute('aria-pressed', on ? 'true' : 'false');
+    this.host.sfx('uiClick');
   }
 
   // ─────────────────────────── TabView ───────────────────────────
@@ -287,25 +306,33 @@ export class PartyTab implements TabView {
           tierWrap,
         ),
       ),
-      h('div', 'camp-stats', statDefs.map(([, , row]) => row)),
       h(
         'div',
-        'camp-ms',
-        h('div', 'camp-ms-head', icon('crown', 16), msLabel, msLeft),
-        h('div', 'camp-ms-bar', msFill),
-      ),
-      mechanic,
-      h(
-        'div',
-        'camp-skill',
+        'camp-hero-core',
+        h('div', 'camp-stats', statDefs.map(([, , row]) => row)),
         h(
           'div',
-          'camp-skill-head',
-          icon(`skill_${sk.id}` as Parameters<typeof icon>[0], 32, 'camp-skill-icon'),
-          h('div', 'camp-skill-name', sk.name, cdMeta),
+          'camp-ms',
+          h('div', 'camp-ms-head', icon('crown', 16), msLabel, msLeft),
+          h('div', 'camp-ms-bar', msFill),
         ),
-        skillDesc,
-        h('p', 'camp-skill-perfect', h('span', 'camp-perfect-tag', 'PERFECT'), sk.perfect),
+      ),
+      h(
+        'div',
+        'camp-hero-info',
+        mechanic,
+        h(
+          'div',
+          'camp-skill',
+          h(
+            'div',
+            'camp-skill-head',
+            icon(`skill_${sk.id}` as Parameters<typeof icon>[0], 32, 'camp-skill-icon'),
+            h('div', 'camp-skill-name', sk.name, cdMeta),
+          ),
+          skillDesc,
+          h('p', 'camp-skill-perfect', h('span', 'camp-perfect-tag', 'PERFECT'), sk.perfect),
+        ),
       ),
       h('div', 'camp-buys', buys.one.el, buys.ten.el, buys.max.el),
     );
@@ -533,7 +560,7 @@ export class PartyTab implements TabView {
       card.el.classList.add('is-milestone');
       window.setTimeout(() => card.el.classList.remove('is-milestone'), 1600);
       const cardCenter = centerIn(layer, card.el);
-      floatText(layer, `Lv${top} 装備更新！`, cardCenter.x, pp.y - 30, 'camp-float--ms');
+      floatText(layer, `Lv${top} 装備更新！`, cardCenter.x, cardCenter.y - 6, 'camp-float--ms');
       burst(layer, pp.x, pp.y, '#ffd84a', 22, 90);
       this.host.ctx.toast(`${HEROES[card.hero].name} Lv${top}到達！ ${MILESTONE_TEXT}`, 'good');
     }

@@ -159,12 +159,13 @@ async function audit(){
       check(save.prestige===beforePrestige&&save.gold===52300000,'Cancel changed progress');
     }
     if(scenario==='review-milestone'){
-      const inView=[...document.querySelectorAll('.camp-portrait')].filter(e=>{const r=e.getBoundingClientRect();return r.top>=0&&r.bottom<=innerHeight;}).length;
-      document.querySelectorAll<HTMLButtonElement>('.camp-buy--one').forEach(b=>b.click());await delay(250);
+      const shown=[...document.querySelectorAll<HTMLButtonElement>('.camp-buy--one')].filter(b=>{const r=b.closest('.camp-hero')!.getBoundingClientRect();return r.top>=0&&r.bottom<=innerHeight;});
+      shown.forEach(b=>b.click());await delay(250);
       const texts=[...document.querySelectorAll('.camp-float--ms')];
-      check(texts.length===inView,'Missing visible milestone effects');
+      check(texts.length===shown.length,'Missing visible milestone effects');
       const rects=texts.map(e=>visible(e,'Milestone',false));
-      check(rects.every((r,i)=>!i||r.x>=rects[i-1].x+rects[i-1].width),'Milestone labels overlap');
+      const apart=(a:{x:number;y:number;width:number;height:number},b:typeof a)=>a.x+a.width<=b.x||b.x+b.width<=a.x||a.y+a.height<=b.y||b.y+b.height<=a.y;
+      check(rects.every((r,i)=>rects.slice(0,i).every(q=>apart(q,r))),'Milestone labels overlap');
       measurements.milestones=rects;
     }
     if(scenario==='review-pause')check(paused===1&&modals.isOpen(),'Visible pause button did not open pause');

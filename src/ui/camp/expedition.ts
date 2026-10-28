@@ -1,28 +1,46 @@
-// 出発 / Expedition tab: the descending route of the six areas, details of the selected area,
-// the big 出発 button and (after the Hollow Sovereign falls) the Rekindle panel.
+// 遠征 / Expedition tab: the descending route of the six areas, details of the selected area
+// and (after the Hollow Sovereign falls) the Rekindle panel. The 出発 control lives in the camp shell.
 import { BAL, formatTime } from '../../core/balance.ts';
-import { bossPity, bossShardsFor, canDescendFrom, canRekindle, frontierArea, rekindleShards } from '../../core/state.ts';
+import { bossPity, bossShardsFor, canDescendFrom, canRekindle, rekindleShards } from '../../core/state.ts';
 import type { Notice } from '../../core/state.ts';
 import { AREA_ORDER, type AreaId } from '../../core/types.ts';
 import { AREAS } from '../../data/areas.ts';
 import { HEROES } from '../../data/heroes.ts';
 import { append, clear, fmt, h, icon, keycap } from './dom.ts';
-import { noticeAreas, type CampHost, type TabView } from './host.ts';
+import { departureArea, noticeAreas, type CampHost, type TabView } from './host.ts';
 import { shake } from './juice.ts';
 import { openRekindle } from './rekindle.ts';
 
 type AreaState = 'open' | 'locked' | 'sealed';
 
+/** Ten stage marks (elite at 5, boss at 10) for a route entry or the departure bar. */
+export function areaPips(best: number, bestEver: number): HTMLElement {
+  const pips = h('span', 'camp-area-pips');
+  for (let s = 1; s <= 10; s++) {
+    const kind = s === 10 ? 'boss' : s === 5 ? 'elite' : 'n';
+    const on = s <= best ? ' is-on' : s <= bestEver ? ' is-ghost' : '';
+    pips.appendChild(h('i', `camp-mpip camp-mpip--${kind}${on}`));
+  }
+  return pips;
+}
+
+export function areaStars(n: number, size: number): HTMLElement {
+  const wrap = h('span', {
+    class: 'camp-stars',
+    attrs: { 'aria-label': `ランタンの星 ${n}/3` },
+    data: { tip: `ランタンの星 ${n}/3|ボス撃破時のランタン残量で獲得\n★1 撃破／★2 残量50%以上／★3 残量75%以上\n新しい星ごとに +${BAL.starEmbers} Ember` },
+  });
+  for (let i = 0; i < 3; i++) wrap.appendChild(icon('star', size, i < n ? 'is-on' : 'is-off'));
+  return wrap;
+}
+
 export class ExpeditionTab implements TabView {
   readonly el: HTMLElement;
   private host: CampHost;
-  private hints: HTMLElement;
   private rekindleSlot: HTMLElement;
   private route: HTMLElement;
   private detail: HTMLElement;
-  private destination: HTMLElement;
   private shownArea: AreaId | null = null;
-  private departBtn: HTMLButtonElement | null = null;
   private noticeRef: readonly Notice[] | null = null;
   private noticeAt = 0;
   /** Notice highlights (flashes) only animate right after returning from a run. */
@@ -30,29 +48,10 @@ export class ExpeditionTab implements TabView {
 
   constructor(host: CampHost) {
     this.host = host;
-    this.hints = h('div', 'camp-hints');
     this.rekindleSlot = h('div', 'camp-rekindle-slot');
     this.route = h('nav', { class: 'camp-route', attrs: { 'aria-label': '遠征ルート' } });
-    this.detail = h('section', 'camp-exp-detail');
-    this.destination = h('strong', 'camp-depart-destination');
-    this.departBtn = h('button', {
-      class: 'camp-btn camp-depart',
-      attrs: { type: 'button' },
-      on: { click: () => this.depart() },
-    }, h('span', 'camp-depart-main', '出発'), keycap('Space'));
-    this.el = h(
-      'div',
-      'camp-page camp-page--expedition',
-      h('div', { class: 'camp-exp-scroll', attrs: { tabindex: '0', 'aria-label': '遠征先の詳細' } },
-        this.hints,
-        this.rekindleSlot,
-        h('div', 'camp-exp', this.route, this.detail),
-      ),
-      h('footer', { class: 'camp-depart-row', attrs: { 'aria-label': '遠征の出発操作' } },
-        h('div', 'camp-depart-target', h('span', 'camp-label', '遠征先'), this.destination),
-        this.departBtn,
-      ),
-    );
+    this.detail = h('section', { class: 'camp-exp-detail', attrs: { 'aria-label': '遠征先の詳細' } });
+    this.el = h('div', 'camp-page camp-page--expedition', this.rekindleSlot, h('div', 'camp-exp', this.route, this.detail));
   }
 
   // ─────────────────────────── TabView ───────────────────────────
@@ -71,24 +70,15 @@ export class ExpeditionTab implements TabView {
     this.shownArea = sel;
   }
 
-  onShow(): void {
-    const save = this.host.save();
-    if (canRekindle(save)) {
-      this.host.hint(
-        this.hints,
-        'campRekindle',
-        'Rekindle（転生）が可能になった！',
-        'Gold・レベル・エリア進行をリセットする代わりに、Relic Shard・Ember Memory（全能力アップ）・Overdrive・Descentなどを得る。スキルツリーとEmberは引き継がれる。',
-      );
-    }
-  }
+  // The Rekindle banner itself explains the trade (its details open the full breakdown).
+  onShow(): void {}
 
   onHide(): void {}
 
   onKey(e: KeyboardEvent): boolean {
     const k = e.key;
     if (k === ' ' || k === 'Enter') {
-      this.depart();
+      this.host.depart();
       return true;
     }
     if (k === 'ArrowUp' || k === 'w' || k === 'W') {
@@ -109,8 +99,7 @@ export class ExpeditionTab implements TabView {
   // ─────────────────────────── Actions ───────────────────────────
 
   private selected(): AreaId {
-    const save = this.host.save();
-    return save.areas[save.selectedArea]?.unlocked ? save.selectedArea : frontierArea(save);
+    return departureArea(this.host.save());
   }
 
   private areaState(id: AreaId): AreaState {
@@ -141,18 +130,6 @@ export class ExpeditionTab implements TabView {
     if (next && next !== this.selected()) this.select(next, true);
   }
 
-  private depart(): void {
-    const save = this.host.save();
-    const id = this.selected();
-    if (!save.areas[id].unlocked) {
-      this.host.sfx('uiError');
-      return;
-    }
-    if (save.selectedArea !== id) save.selectedArea = id;
-    if (this.departBtn) this.departBtn.classList.add('is-launching');
-    this.host.ctx.startRun(id);
-  }
-
   // ─────────────────────────── Rendering ───────────────────────────
 
   private renderRekindle(): void {
@@ -172,7 +149,7 @@ export class ExpeditionTab implements TabView {
           'div',
           'camp-rekindle-sub',
           save.prestige === 0
-            ? 'The Hollow Sovereignは倒れた。炎を灯し直し、より強く深く――。'
+            ? 'Gold・レベル・エリア進行と引き換えに、より強く深く。スキルツリーとEmberは引き継がれる。'
             : '再び深淵を越えた。さらなる周回へ炎を灯し直そう。',
         ),
         h('div', 'camp-rekindle-gain', icon('shard', 20), `Relic Shard +${fmt(shards)}`, h('span', 'camp-dim', ' ほか多数の解放')),
@@ -227,18 +204,11 @@ export class ExpeditionTab implements TabView {
       const depth = h('span', 'camp-area-depth', st === 'open' ? String(i + 1) : icon('lock', 16));
       let body: HTMLElement;
       if (st === 'open') {
-        const pips = h('span', 'camp-area-pips');
-        for (let s = 1; s <= 10; s++) {
-          const kind = s === 10 ? 'boss' : s === 5 ? 'elite' : 'n';
-          const on = s <= a.best ? ' is-on' : s <= a.bestEver ? ' is-ghost' : '';
-          pips.appendChild(h('i', `camp-mpip camp-mpip--${kind}${on}`));
-        }
         body = h(
           'span',
           'camp-area-body',
-          h('span', 'camp-area-name', def.name),
-          h('span', 'camp-area-sub', def.subtitle),
-          h('span', 'camp-area-meta', pips, this.stars(a.stars, 14)),
+          h('span', 'camp-area-title', h('span', 'camp-area-name', def.name), h('span', 'camp-area-sub', def.subtitle)),
+          h('span', 'camp-area-meta', areaPips(a.best, a.bestEver), areaStars(a.stars, 14)),
         );
       } else if (st === 'sealed') {
         body = h(
@@ -265,16 +235,6 @@ export class ExpeditionTab implements TabView {
     this.route.appendChild(list);
   }
 
-  private stars(n: number, size: number): HTMLElement {
-    const wrap = h('span', {
-      class: 'camp-stars',
-      attrs: { 'aria-label': `ランタンの星 ${n}/3` },
-      data: { tip: `ランタンの星 ${n}/3|ボス撃破時のランタン残量で獲得\n★1 撃破／★2 残量50%以上／★3 残量75%以上\n新しい星ごとに +${BAL.starEmbers} Ember` },
-    });
-    for (let i = 0; i < 3; i++) wrap.appendChild(icon('star', size, i < n ? 'is-on' : 'is-off'));
-    return wrap;
-  }
-
   private renderDetail(id: AreaId, animate: boolean): void {
     const save = this.host.save();
     const mods = this.host.mods();
@@ -292,27 +252,14 @@ export class ExpeditionTab implements TabView {
       this.detail.classList.add('is-enter');
     }
 
-    // Banner: a stylised vista in the area's palette.
-    const motes = h('div', 'camp-vista-motes');
-    for (let i = 0; i < 9; i++) {
-      motes.appendChild(
-        h('i', { style: `left:${8 + ((i * 37) % 86)}%;animation-delay:${(i * 0.73) % 4}s;animation-duration:${4 + (i % 3)}s` }),
-      );
-    }
-    const banner = h(
-      'div',
-      'camp-vista',
-      h('div', 'camp-vista-ridge camp-vista-ridge--far'),
-      h('div', 'camp-vista-ridge camp-vista-ridge--mid'),
-      h('div', 'camp-vista-ridge camp-vista-ridge--near'),
-      motes,
-      h(
-        'div',
-        'camp-vista-text',
-        h('div', 'camp-vista-no', `AREA ${def.index + 1}`, a.cleared ? h('span', 'camp-chip camp-chip--clear', '踏破済み') : null),
-        h('h2', 'camp-vista-name', def.name),
-        h('div', 'camp-vista-sub', def.subtitle),
-      ),
+    // The scene in the stage column carries the mood; the heading only names the area.
+    const head = h(
+      'header',
+      'camp-exp-head',
+      h('span', 'camp-exp-no', `AREA ${def.index + 1}`),
+      h('h2', 'camp-exp-name', def.name),
+      h('span', 'camp-exp-sub', def.subtitle),
+      a.cleared ? h('span', 'camp-chip camp-chip--clear', '踏破済み') : null,
     );
 
     // Stage track (best / 10).
@@ -342,7 +289,7 @@ export class ExpeditionTab implements TabView {
     const tiles = h(
       'div',
       'camp-exp-tiles',
-      this.tile('ランタンの星', this.stars(a.stars, 22), '残量50%・75%以上でボスを倒すと星'),
+      this.tile('ランタンの星', areaStars(a.stars, 22), '残量50%・75%以上でボスを倒すと星'),
       this.tile('挑戦回数', h('b', 'camp-num', fmt(a.attempts)), save.prestige > 0 ? 'このサイクル' : '出発した回数'),
       this.tile('ランタン', h('b', 'camp-num', `${fmt(lantern)}s`), `ボス戦でフレア ${def.flare}s`),
     );
@@ -390,17 +337,12 @@ export class ExpeditionTab implements TabView {
       );
     }
 
-    this.destination.textContent = def.name;
-    this.departBtn?.setAttribute('aria-label', `${def.name}へ出発`);
-    this.departBtn?.classList.remove('is-launching');
-
     append(this.detail, [
-      banner,
+      head,
       h('p', 'camp-exp-intro', def.intro),
       trackBox,
       tiles,
-      boss,
-      perks.childElementCount ? perks : null,
+      h('div', 'camp-exp-goal', boss, perks.childElementCount ? perks : null),
     ]);
   }
 

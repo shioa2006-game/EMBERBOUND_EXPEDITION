@@ -1,5 +1,4 @@
 // Top bar shared by battle and camp: area name, currencies (loot targets), playtime, sound & settings.
-import { AREAS } from '../data/areas.ts';
 import type { Loot, SaveData } from '../core/types.ts';
 import type { LootTargets } from '../render/api.ts';
 import { flash, fmt, fmtClock, h, icon, setText, toggleClass } from './dom.ts';
@@ -145,9 +144,9 @@ export class TopBar {
       setText(this.areaName, run.name);
       setText(this.areaSub, `${run.subtitle}・第${run.index + 1}の地`);
     } else {
-      const sel = AREAS[save.selectedArea];
+      // the camp's departure bar names the destination; no second copy up here
       setText(this.areaName, '野営地');
-      setText(this.areaSub, `次の遠征先：${sel.name}`);
+      setText(this.areaSub, '');
     }
     toggleClass(this.cycleChip, 'hidden', save.prestige < 1);
     if (save.prestige >= 1) setText(this.cycleChip, `周回 ${save.prestige + 1}`);

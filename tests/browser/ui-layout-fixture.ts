@@ -81,41 +81,63 @@ async function audit() {
     if (last.getBoundingClientRect().bottom > scroll.getBoundingClientRect().bottom + 1) failures.push('Result details cannot scroll fully into view');
     measurements.actions = initial; measurements.scrollHeight = scroll.scrollHeight;
     scroll.scrollTop = 0;
-  } else if (scenario.endsWith('expedition')) {
+  } else {
+    // Camp: the departure control is shared by every tab and never moves with the content.
     const button = document.querySelector<HTMLButtonElement>('.camp-depart')!;
-    const initial = rect(button); visible(button, 'Departure');
-    const scroll = document.querySelector<HTMLElement>('.camp-exp-scroll')!;
-    scroll.scrollTop = scroll.scrollHeight; await delay(60); visible(button, 'Departure after scroll');
-    if (Math.abs(button.getBoundingClientRect().y - initial.y) > 1) failures.push('Departure moved on scroll');
-    const last = document.querySelector('.camp-exp-detail')!.lastElementChild!;
-    if (last.getBoundingClientRect().bottom > scroll.getBoundingClientRect().bottom + 1) failures.push('Expedition details cannot scroll fully into view');
+    const pages = document.querySelector<HTMLElement>('.camp-pages')!;
+    const wide = innerWidth >= 900;
+    const standard = innerWidth >= 1280 && innerHeight >= 720;
+    const scene = document.querySelector('.viewport-wrap')!.getBoundingClientRect();
+    measurements.scene = [Math.round(scene.width), Math.round(scene.height)];
+    if (wide && !scenario.endsWith('tree') && scene.width < 280) failures.push(`Camp scene too small: ${Math.round(scene.width)}x${Math.round(scene.height)}`);
     const hint = document.querySelector<HTMLButtonElement>('.camp-hints button');
+    const initial = rect(button); visible(button, 'Departure');
     if (hint) { hint.click(); await delay(320); if (Math.abs(button.getBoundingClientRect().y - initial.y) > 1) failures.push('Departure moved after dismissing hint'); }
-    const guidance = document.querySelector('.camp-guidance')!;
-    const guidanceBottom = guidance.getBoundingClientRect().bottom;
-    if (guidanceBottom > scroll.getBoundingClientRect().top + 1) failures.push('Guidance overlaps details');
-    document.querySelector<HTMLButtonElement>('[data-tab="party"]')!.click(); await delay(350);
-    const beforeGold = save.gold;
-    const buy = [...document.querySelectorAll<HTMLButtonElement>('.camp-btn')].find(b => b.textContent?.includes('均等に強化'));
-    const canBuy = !!buy && !buy.disabled && buy.getAttribute('aria-disabled') !== 'true';
-    measurements.purchaseAvailable = canBuy;
-    if (canBuy) buy!.click(); await delay(350);
-    if (canBuy && save.gold >= beforeGold) failures.push('Party purchase did not spend Gold');
-    document.querySelector<HTMLButtonElement>('[data-tab="tree"]')!.click(); await delay(350);
-    document.querySelector<HTMLButtonElement>('[data-tab="expedition"]')!.click(); await delay(350);
-    visible(button, 'Departure after tabs and purchase');
-    if (Math.abs(button.getBoundingClientRect().y - initial.y) > 1) failures.push('Departure moved after tab/purchase/notification changes');
-    if (late) {
-      document.querySelector<HTMLButtonElement>('[data-area="ruins"]')!.click(); await delay(350);
-      if (!document.querySelector('.camp-depart-destination')!.textContent?.includes('Drowned')) failures.push('Destination did not update');
-      if (Math.abs(button.getBoundingClientRect().y - initial.y) > 1) failures.push('Departure moved after area change');
-      document.querySelector<HTMLButtonElement>('[data-area="heart"]')!.click(); await delay(350);
+    // Primary content fits without scrolling at 1280x720 and larger (the relic list and tree may scroll/pan).
+    // Entry animations slide pages in from below (and may be throttled in a background frame): measure the settled layout.
+    const still = document.head.appendChild(document.createElement('style'));
+    still.textContent = '*, *::before, *::after { animation: none !important; transition: none !important; }';
+    measurements.pageScroll = [pages.scrollHeight, pages.clientHeight];
+    if (standard && (scenario.endsWith('expedition') || scenario.endsWith('party')) && pages.scrollHeight > pages.clientHeight + 1) failures.push(`Camp ${scenario} needs scrolling: ${pages.scrollHeight}/${pages.clientHeight}`);
+    still.remove();
+    pages.scrollTop = pages.scrollHeight; await delay(60); visible(button, 'Departure after scroll');
+    if (Math.abs(button.getBoundingClientRect().y - initial.y) > 1) failures.push('Departure moved on scroll');
+    pages.scrollTop = 0;
+    if (scenario.endsWith('expedition')) {
+      const last = document.querySelector('.camp-exp-detail')!.lastElementChild!;
+      pages.scrollTop = pages.scrollHeight; await delay(60);
+      if (last.getBoundingClientRect().bottom > pages.getBoundingClientRect().bottom + 1) failures.push('Expedition details cannot scroll fully into view');
+      pages.scrollTop = 0;
+      document.querySelector<HTMLButtonElement>('[data-tab="party"]')!.click(); await delay(350);
+      visible(button, 'Departure on party tab');
+      if (wide && Math.abs(button.getBoundingClientRect().y - initial.y) > 1) failures.push('Departure moved between tabs');
+      const beforeGold = save.gold;
+      const buy = [...document.querySelectorAll<HTMLButtonElement>('.camp-btn')].find(b => b.textContent?.includes('均等に強化'));
+      const canBuy = !!buy && !buy.disabled && buy.getAttribute('aria-disabled') !== 'true';
+      measurements.purchaseAvailable = canBuy;
+      if (canBuy) buy!.click(); await delay(350);
+      if (canBuy && save.gold >= beforeGold) failures.push('Party purchase did not spend Gold');
+      document.querySelector<HTMLButtonElement>('[data-tab="tree"]')!.click(); await delay(350);
+      visible(button, 'Departure on tree tab');
+      document.querySelector<HTMLButtonElement>('[data-tab="expedition"]')!.click(); await delay(350);
+      visible(button, 'Departure after tabs and purchase');
+      if (Math.abs(button.getBoundingClientRect().y - initial.y) > 1) failures.push('Departure moved after tab/purchase/notification changes');
+      if (late) {
+        document.querySelector<HTMLButtonElement>('[data-area="ruins"]')!.click(); await delay(350);
+        if (!document.querySelector('.camp-depart-destination')!.textContent?.includes('Drowned')) failures.push('Destination did not update');
+        if (Math.abs(button.getBoundingClientRect().y - initial.y) > 1) failures.push('Departure moved after area change');
+        document.querySelector<HTMLButtonElement>('[data-area="heart"]')!.click(); await delay(350);
+      }
+      document.querySelector<HTMLButtonElement>('[data-tab="party"]')!.click(); await delay(350);
+      document.body.dispatchEvent(new KeyboardEvent('keydown', { key: ' ', bubbles: true }));
+      if (started !== save.selectedArea) failures.push('Space on the party tab did not depart');
+      started = '';
+      document.querySelector<HTMLButtonElement>('[data-tab="expedition"]')!.click(); await delay(350);
+      button.click(); if (started !== save.selectedArea) failures.push('Departure did not start selected area');
+      button.classList.remove('is-launching');
+      measurements.departure = rect(button); measurements.color = getComputedStyle(button).color;
+      measurements.background = getComputedStyle(button).backgroundImage;
     }
-    button.click(); if (started !== save.selectedArea) failures.push('Departure did not start selected area');
-    button.classList.remove('is-launching');
-    measurements.departure = rect(button); measurements.color = getComputedStyle(button).color;
-    measurements.background = getComputedStyle(button).backgroundImage;
-    scroll.scrollTop = 0;
   }
   if (document.documentElement.scrollWidth > innerWidth) failures.push('Horizontal document overflow');
   const report = { scenario, measurements, failures };

@@ -165,10 +165,10 @@ export class App {
     this.renderer.setLootTargets(this.topbar.lootTargets());
     this.applySettings(false);
     this.updateCampStrip();
-    if (typeof ResizeObserver !== 'undefined') new ResizeObserver(() => this.renderer.resize()).observe(this.viewport);
+    if (typeof ResizeObserver !== 'undefined') new ResizeObserver(() => this.refit()).observe(this.viewport);
     window.addEventListener('resize', () => {
       this.updateCampStrip();
-      this.renderer.resize();
+      this.refit();
     });
 
     this.bindInput();
@@ -302,6 +302,13 @@ export class App {
     setVar(this.root, '--camp-strip', `${campSceneHeight(window.innerHeight)}px`);
   }
 
+  /** Resize the canvas and let the battle HUD line up with the stage's edges. */
+  private refit(): void {
+    this.renderer.resize();
+    const c = this.viewport.querySelector('canvas');
+    if (this.screen === 'battle' && c && c.offsetWidth > 0) setVar(this.root, '--stage-w', `${Math.round(c.offsetWidth)}px`);
+  }
+
   /** Tint the letterbox around the canvas with the current area's palette. */
   private updateBackdrop(): void {
     const area = this.screen === 'battle' && this.battle ? this.battle.area : AREAS[this.save.selectedArea];
@@ -365,8 +372,8 @@ export class App {
     }
     if (s !== 'camp') this.camp?.hide();
     if (s !== 'title') this.title.hide();
-    this.renderer.resize();
-    requestAnimationFrame(() => this.renderer.resize());
+    this.refit();
+    requestAnimationFrame(() => this.refit());
   }
 
   showTitle(): void {
