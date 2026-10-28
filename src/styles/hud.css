@@ -1089,6 +1089,59 @@
   gap: 12px;
   margin-inline: auto;
 }
+
+/* One-line skill / Overdrive hint: sits on the floor just above the HUD instead of a tooltip over the field. */
+.skill-hint {
+  position: absolute;
+  bottom: calc(100% + 6px);
+  left: 50%;
+  z-index: 5;
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  max-width: calc(100% - 16px);
+  padding: 4px 12px;
+  border: 1px solid #a38c62a6;
+  border-radius: 7px 3px 6px 3px;
+  background: rgba(14, 12, 20, 0.88);
+  box-shadow: 0 4px 14px #0006;
+  color: var(--text-dim);
+  font-size: 13px;
+  line-height: 1.4;
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  transform: translate(-50%, 4px);
+  transition: opacity 0.12s ease, transform 0.12s ease;
+}
+.skill-hint.show {
+  opacity: 1;
+  transform: translate(-50%, 0);
+}
+.sh-name {
+  color: var(--text);
+  font-family: var(--font-story);
+  font-weight: 600;
+}
+.sh-meta {
+  color: var(--text-faint);
+  font-family: var(--font-num);
+}
+.sh-tag {
+  align-self: center;
+  padding: 0 6px;
+  border-radius: 2px;
+  background: linear-gradient(90deg, var(--gold), var(--ember-hi));
+  color: #1a0f14;
+  font-family: var(--font-num);
+  font-size: 11px;
+}
+.sh-text {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--text);
+  text-overflow: ellipsis;
+}
 .skill-slot {
   --hc: #fff;
   --cd: 0;

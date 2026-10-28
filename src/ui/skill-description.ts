@@ -41,3 +41,14 @@ export function heroMechanic(hero: HeroId, m: Mods): string {
   if (hero === 'ranger') return `高速の矢とクリティカル。敵をクリックしてMark（被ダメージ＋${pct(m.markBonus)}・全員で集中攻撃）。`;
   return HEROES[hero].mechanic;
 }
+
+/** The PERFECT condition in a few words, for the one-line hint shown while fighting. */
+const PERFECT_SHORT: Record<HeroId, string> = {
+  guardian: '溜め攻撃を中断',
+  ranger: '4体以上か、スタン中の敵に命中',
+  arcanist: '3体以上・盾持ち・スタン中に命中',
+  oracle: '紫の大技の直前／状態異常の解除／HP半分以下',
+};
+export function perfectShort(hero: HeroId): string {
+  return PERFECT_SHORT[hero];
+}

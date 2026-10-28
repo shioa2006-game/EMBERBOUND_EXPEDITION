@@ -1235,8 +1235,87 @@
 /* ───────────────────────── Pause ───────────────────────── */
 
 .modal-pause {
-  width: min(420px, 100%);
+  width: min(980px, 100%);
+}
+/* Menu on the left (kept in view while the skill texts scroll), the party's skills on the right. */
+.pause {
+  display: grid;
+  grid-template-columns: minmax(220px, 260px) minmax(0, 1fr);
+  align-items: start;
+  gap: 18px 28px;
+}
+.pause-main {
+  position: sticky;
+  top: 0;
   text-align: center;
+}
+@media (max-width: 760px) {
+  .pause {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .pause-main {
+    position: static;
+  }
+}
+.pause-skills-title {
+  margin-bottom: 8px;
+  color: var(--text-dim);
+  font-size: var(--fs-s);
+  letter-spacing: 0.1em;
+}
+.pause-skill-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 10px;
+}
+.pause-skill {
+  --hc: var(--text-dim);
+  display: grid;
+  align-content: start;
+  gap: 6px;
+  padding: 10px 12px;
+  border: 1px solid color-mix(in srgb, var(--hc) 40%, #615944);
+  border-radius: 8px 4px 7px 4px;
+  background: linear-gradient(105deg, color-mix(in srgb, var(--hc) 10%, #1d252a), #171e24);
+  font-size: 13px;
+  line-height: 1.55;
+}
+.ps-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.ps-icon {
+  width: 24px;
+  height: 24px;
+}
+.ps-name {
+  color: var(--text);
+  font-family: var(--font-story);
+  font-size: var(--fs-s);
+}
+.ps-cd {
+  margin-left: auto;
+  color: var(--text-faint);
+  font-family: var(--font-num);
+}
+.ps-desc {
+  color: var(--text-dim);
+  white-space: pre-line;
+}
+.ps-perfect {
+  color: var(--text);
+}
+.ps-tag {
+  display: inline-block;
+  margin-right: 6px;
+  padding: 0 6px;
+  border-radius: 2px;
+  background: linear-gradient(90deg, var(--gold), var(--ember-hi));
+  color: #1a0f14;
+  font-family: var(--font-num);
+  font-size: 11px;
+  vertical-align: 1px;
 }
 .pause-kicker {
   font-family: var(--font-num);
@@ -1255,7 +1334,7 @@
   display: flex;
   flex-direction: column;
   gap: 12px;
-  width: 260px;
+  width: min(260px, 100%);
   margin: 20px auto 14px;
 }
 .pause-menu .btn {

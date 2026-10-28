@@ -242,14 +242,36 @@ export function installTooltips(root: HTMLElement): void {
     y = clamp(y, 6, window.innerHeight - th - 6);
     tipEl.style.transform = `translate(${Math.round(x)}px, ${Math.round(y)}px)`;
   };
+  // Inside an element with data-tip-delay (the battle HUD) a tooltip waits until the pointer rests there.
+  let waiting: HTMLElement | null = null;
+  let timer = 0;
   const hide = () => {
+    window.clearTimeout(timer);
+    waiting = null;
     tipOwner = null;
     tipEl?.classList.remove('show');
   };
   document.addEventListener('pointerover', (e) => {
     const t = (e.target as HTMLElement | null)?.closest?.('[data-tip]') as HTMLElement | null;
-    if (t && t !== tipOwner) show(t);
-    else if (!t && tipOwner) hide();
+    if (!t) {
+      if (tipOwner || waiting) hide();
+      return;
+    }
+    if (t === tipOwner || t === waiting) return;
+    const delay = Number(t.closest<HTMLElement>('[data-tip-delay]')?.dataset.tipDelay ?? 0);
+    if (!(delay > 0)) {
+      hide();
+      show(t);
+      return;
+    }
+    hide();
+    waiting = t;
+    timer = window.setTimeout(() => {
+      if (waiting === t && t.isConnected) {
+        waiting = null;
+        show(t);
+      }
+    }, delay);
   });
   document.addEventListener('pointerdown', hide, true);
   window.addEventListener('blur', hide);

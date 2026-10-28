@@ -18,7 +18,7 @@ import { Battle } from '../../src/core/battle.ts';
 import { AREA_ORDER, type RunResult } from '../../src/core/types.ts';
 import { TREE } from '../../src/data/tree.ts';
 import { campSceneHeight } from '../../src/ui/layout.ts';
-import { skillDescription } from '../../src/ui/skill-description.ts';
+import { perfectShort, skillDescription } from '../../src/ui/skill-description.ts';
 import { makeSave } from '../helpers/saves.ts';
 import type { IAudio } from '../../src/audio/api.ts';
 
@@ -126,8 +126,19 @@ async function audit(){
   if(scenario==='review-battle'){
     visible(document.querySelector('.tb-pause')!,'Pause');
     document.querySelectorAll('.skill').forEach(b=>visible(b,'Battle skill'));
-    const ranger=[...document.querySelectorAll<HTMLElement>('.skill')].find(e=>e.dataset.tip?.startsWith('Arrow Rain'));
-    check(ranger?.dataset.tip?.includes(skillDescription('ranger',battle.mods)),'Battle tooltip differs from current skill');
+    // Skills no longer open a full tooltip over the field: a one-line hint sits on the floor band instead.
+    const ranger=[...document.querySelectorAll<HTMLElement>('.skill')].find(e=>e.getAttribute('aria-label')?.startsWith('Arrow Rain'))!;
+    check(!ranger.dataset.tip,'Battle skill still opens a full tooltip');
+    ranger.dispatchEvent(new PointerEvent('pointerenter'));
+    const hint=document.querySelector<HTMLElement>('.skill-hint')!;
+    check(hint.classList.contains('show')&&!!hint.textContent?.includes('Arrow Rain')&&!!hint.textContent?.includes(perfectShort('ranger')),'Skill hint missing');
+    const hr=hint.getBoundingClientRect(),stage=document.querySelector('.viewport canvas')!.getBoundingClientRect();
+    measurements.skillHint={top:hr.top,bottom:hr.bottom,stageTop:stage.top,stageBottom:stage.bottom};
+    // It may reach into the letterbox under the stage, but never above the floor band (the lowest fifth).
+    check(hr.top>=stage.top+stage.height*.8,'Skill hint covers the field');
+    check(hr.left>=-1&&hr.right<=innerWidth+1,'Skill hint outside the window');
+    ranger.dispatchEvent(new PointerEvent('pointerleave'));
+    check(!hint.classList.contains('show'),'Skill hint stays after leaving');
   }
   if(!preview){
     if(scenario==='review-result-keys'){
@@ -174,7 +185,13 @@ async function audit(){
       check(rects.every((r,i)=>rects.slice(0,i).every(q=>apart(q,r))),'Milestone labels overlap');
       measurements.milestones=rects;
     }
-    if(scenario==='review-pause')check(paused===1&&modals.isOpen(),'Visible pause button did not open pause');
+    if(scenario==='review-pause'){
+      check(paused===1&&modals.isOpen(),'Visible pause button did not open pause');
+      // The full, upgrade-aware skill texts are read in the pause menu.
+      const text=document.querySelector('.pause-skills')?.textContent??'';
+      check(text.includes(skillDescription('ranger',battle.mods).split('\n')[0])&&text.includes('4体以上、またはスタン中の敵に命中させる'),'Pause lacks the full skill text');
+      visible(document.querySelector('.pause-menu .btn')!,'Resume');
+    }
   }
   check(document.documentElement.scrollWidth<=innerWidth,'Horizontal overflow');
   parent.postMessage({type:'ui-layout-result',report:{scenario,measurements,failures}},location.origin);

@@ -6,7 +6,7 @@ import type { Battle } from '../core/battle.ts';
 import { AREA_ORDER, HERO_ORDER, type BattleEvent, type HeroId, type SaveData, type Unit } from '../core/types.ts';
 import type { IconKey } from '../render/sprites/index.ts';
 import { clamp, clear, flash, fmt, h, icon, setAttr, setText, setVar, toggleClass } from './dom.ts';
-import { heroMechanic, skillDescription } from './skill-description.ts';
+import { heroMechanic, perfectShort } from './skill-description.ts';
 
 export interface HudHost {
   getSave(): SaveData;
@@ -91,6 +91,7 @@ export class BattleHud {
   private skillsEl: HTMLElement;
   private odWrap: HTMLElement;
   private odBtn: HTMLButtonElement;
+  private hint: HTMLElement;
   private odVal: HTMLElement;
   private cards: HeroCard[] = [];
   private slots = {} as Record<HeroId, SkillSlot>;
@@ -156,8 +157,13 @@ export class BattleHud {
       'button',
       {
         class: 'overdrive',
-        tip: 'Overdrive [Space]|ゲージ満タンで発動。6秒間、攻撃速度×2・クールダウン回復×2・与ダメージ+50%。\n中断・PERFECT・撃破でゲージが溜まる。',
-        on: { click: () => this.host.activateOverdrive() },
+        on: {
+          click: () => this.host.activateOverdrive(),
+          pointerenter: () => this.showOverdriveHint(),
+          pointerleave: () => this.hideHint(),
+          focus: () => this.showOverdriveHint(),
+          blur: () => this.hideHint(),
+        },
       },
       h('span', { class: 'od-ring' }),
       h('span', { class: 'od-core' }, h('span', { class: 'od-label', text: 'OVER\nDRIVE' }), this.odVal),
@@ -167,7 +173,10 @@ export class BattleHud {
 
     for (const hero of HERO_ORDER) this.slots[hero] = this.makeSlot(hero);
 
-    this.el = h('section', { class: 'hud', attrs: { 'aria-label': 'バトルHUD' } }, strip, h('div', { class: 'hud-main' }, this.partyEl, this.skillsEl, this.odWrap));
+    // While fighting, skills explain themselves in one line over the floor, not in a tooltip over the field.
+    this.hint = h('div', { class: 'skill-hint', attrs: { 'aria-hidden': 'true' } });
+    // Other HUD tooltips wait a moment, so a mouse passing by does not cover the field.
+    this.el = h('section', { class: 'hud', attrs: { 'aria-label': 'バトルHUD' }, dataset: { tipDelay: '450' } }, strip, h('div', { class: 'hud-main' }, this.partyEl, this.skillsEl, this.odWrap), this.hint);
   }
 
   // ─────────────────────────── public ───────────────────────────
@@ -218,16 +227,46 @@ export class BattleHud {
       toggleClass(s.auto, 'hidden', !(recruited && b.mods.autoCast));
       toggleClass(s.pip, 'hidden', !(recruited && b.mods.emberbond));
       toggleClass(s.vow, 'hidden', !(hero === 'guardian' && b.mods.unbrokenVow));
-      if (recruited) {
-        const st = b.skills[hero];
-        setAttr(s.btn, 'data-tip', this.skillTip(hero, st.maxCooldown));
-      }
       this.skillsEl.appendChild(s.root);
     }
     toggleClass(this.odWrap, 'hidden', !b.mods.overdrive);
-    this.odBtn.dataset.tip = `Overdrive [Space]|ゲージ満タンで発動。${+b.overdriveMax.toFixed(1)}秒間、攻撃速度×2・クールダウン回復×2・与ダメージ+50%。
-中断・PERFECT・撃破でゲージが溜まる。`;
+    this.hideHint();
     this.update(0);
+  }
+
+  // ─────────────────────────── one-line hint ───────────────────────────
+
+  private showSkillHint(hero: HeroId, anchor: HTMLElement): void {
+    const b = this.b;
+    if (!b || !b.party.includes(hero)) return;
+    const sk = HEROES[hero].skill, cd = b.skills[hero].maxCooldown;
+    this.showHint(anchor, `${sk.name} [${sk.key}]`, `CD ${cd.toFixed(cd % 1 ? 1 : 0)}秒`, 'PERFECT', perfectShort(hero));
+  }
+
+  private showOverdriveHint(): void {
+    const b = this.b;
+    if (!b) return;
+    this.showHint(this.odBtn, 'Overdrive [Space]', `${+b.overdriveMax.toFixed(1)}秒間`, '効果', '攻撃速度×2・CD回復×2・与ダメ+50%');
+  }
+
+  /** Name, a short fact and a tagged condition, centred over `anchor` just above the HUD (on the floor). */
+  private showHint(anchor: HTMLElement, name: string, meta: string, tag: string, text: string): void {
+    const el = this.hint;
+    el.replaceChildren(
+      h('b', { class: 'sh-name', text: name }),
+      h('span', { class: 'sh-meta', text: meta }),
+      h('span', { class: 'sh-tag', text: tag }),
+      h('span', { class: 'sh-text', text }),
+    );
+    const hud = this.el.getBoundingClientRect(), a = anchor.getBoundingClientRect();
+    const half = el.offsetWidth / 2, margin = 8;
+    const x = clamp(a.left + a.width / 2 - hud.left, half + margin, Math.max(half + margin, hud.width - half - margin));
+    el.style.left = `${Math.round(x)}px`;
+    el.classList.add('show');
+  }
+
+  private hideHint(): void {
+    this.hint.classList.remove('show');
   }
 
   update(dt: number): void {
@@ -333,11 +372,6 @@ export class BattleHud {
 
   // ─────────────────────────── builders ───────────────────────────
 
-  private skillTip(hero: HeroId, cd: number): string {
-    const sk = HEROES[hero].skill;
-    return `${sk.name} [${sk.key}]|${this.b ? skillDescription(hero, this.b.mods) : sk.desc}\nCooldown ${cd.toFixed(cd % 1 ? 1 : 0)}秒\nPERFECT：${sk.perfect}（クールダウン${Math.round(BAL.perfectRefund * 100)}%回復）`;
-  }
-
   private makeSlot(hero: HeroId, recruited = false): SkillSlot {
     const def = HEROES[hero];
     const sk = def.skill;
@@ -360,7 +394,17 @@ export class BattleHud {
     if (recruited) {
       btn = h(
         'button',
-        { class: 'skill', attrs: { 'aria-label': `${sk.name}（${sk.key}）` }, on: { click: () => this.host.castSkill(hero) } },
+        {
+          class: 'skill',
+          attrs: { 'aria-label': `${sk.name}（${sk.key}）PERFECT：${sk.perfect}` },
+          on: {
+            click: () => this.host.castSkill(hero),
+            pointerenter: (e: Event) => this.showSkillHint(hero, e.currentTarget as HTMLElement),
+            pointerleave: () => this.hideHint(),
+            focus: (e: Event) => this.showSkillHint(hero, e.currentTarget as HTMLElement),
+            blur: () => this.hideHint(),
+          },
+        },
         h('span', { class: 'skill-face' }, icon(SKILL_ICON[hero], 2, 'skill-icon')),
         h('span', { class: 'skill-name', text: sk.name }),
         h('span', { class: 'skill-sweep' }),
