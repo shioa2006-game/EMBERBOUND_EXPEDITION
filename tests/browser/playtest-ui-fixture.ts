@@ -114,6 +114,12 @@ async function audit(){
     const desc=document.querySelector('.camp-hero[data-hero="ranger"] .camp-skill-desc')!;
     check(desc.textContent?.includes('20本'),'Late Ranger description stale');
     const pages=document.querySelector<HTMLElement>('.camp-pages')!;
+    // every node learned = the longest skill texts: four heroes still fit at 1280x720 and up (animations settled)
+    const still=document.head.appendChild(document.createElement('style'));
+    still.textContent='*,*::before,*::after{animation:none!important;transition:none!important}';
+    measurements.partyScroll=[pages.scrollHeight,pages.clientHeight];
+    if(innerWidth>=1280&&innerHeight>=720)check(pages.scrollHeight<=pages.clientHeight+1,`Party needs scrolling: ${pages.scrollHeight}/${pages.clientHeight}`);
+    still.remove();
     for(const b of document.querySelectorAll('.camp-buy--one')){b.scrollIntoView({block:'center'});await delay(30);visible(b,'Level up');}
     pages.scrollTop=0;
   }

@@ -1,5 +1,5 @@
 // パーティ / Party tab: one row per hero with stats, milestone and Gold level purchases.
-// Skill texts show beside the row on wide panels, or below it when 「スキル説明」 is toggled.
+// Wide panels show a skill summary beside the row (full text on hover); 「スキル説明」 shows every text in full.
 import { BAL, gearTier, nextMilestone } from '../../core/balance.ts';
 import {
   buyLevels,
@@ -50,6 +50,7 @@ interface HeroCard {
   msFill: HTMLElement;
   cdMeta: HTMLElement;
   skillDesc: HTMLElement;
+  skillBox: HTMLElement;
   mechanic: HTMLElement;
   buys: Record<BuyKind, BuyButton>;
   pose: SpritePose;
@@ -162,6 +163,7 @@ export class PartyTab implements TabView {
     this.grid.classList.toggle('is-detailed', on);
     this.detailBtn.setAttribute('aria-pressed', on ? 'true' : 'false');
     this.host.sfx('uiClick');
+    this.update();
   }
 
   // ─────────────────────────── TabView ───────────────────────────
@@ -288,6 +290,18 @@ export class PartyTab implements TabView {
     const sk = def.skill;
     const cdMeta = h('span', 'camp-skill-meta', '');
     const skillDesc = h('p', 'camp-skill-desc');
+    const skillBox = h(
+      'div',
+      'camp-skill',
+      h(
+        'div',
+        'camp-skill-head',
+        icon(`skill_${sk.id}` as Parameters<typeof icon>[0], 32, 'camp-skill-icon'),
+        h('div', 'camp-skill-name', sk.name, cdMeta),
+      ),
+      skillDesc,
+      h('p', 'camp-skill-perfect', h('span', 'camp-perfect-tag', 'PERFECT'), sk.perfect),
+    );
     const mechanic = h('p', 'camp-hero-mech');
     const el = h(
       'article',
@@ -317,23 +331,7 @@ export class PartyTab implements TabView {
           h('div', 'camp-ms-bar', msFill),
         ),
       ),
-      h(
-        'div',
-        'camp-hero-info',
-        mechanic,
-        h(
-          'div',
-          'camp-skill',
-          h(
-            'div',
-            'camp-skill-head',
-            icon(`skill_${sk.id}` as Parameters<typeof icon>[0], 32, 'camp-skill-icon'),
-            h('div', 'camp-skill-name', sk.name, cdMeta),
-          ),
-          skillDesc,
-          h('p', 'camp-skill-perfect', h('span', 'camp-perfect-tag', 'PERFECT'), sk.perfect),
-        ),
-      ),
+      h('div', 'camp-hero-info', mechanic, skillBox),
       h('div', 'camp-buys', buys.one.el, buys.ten.el, buys.max.el),
     );
     return {
@@ -351,6 +349,7 @@ export class PartyTab implements TabView {
       msFill,
       cdMeta,
       skillDesc,
+      skillBox,
       mechanic,
       buys,
       pose: 'idle',
@@ -391,8 +390,18 @@ export class PartyTab implements TabView {
     const mods = this.host.mods();
     const hero = card.hero;
     const cd = skillCooldown(mods, hero);
-    setText(card.skillDesc, skillDescription(hero, mods));
-    setText(card.mechanic, heroMechanic(hero, mods));
+    const desc = skillDescription(hero, mods);
+    const mech = heroMechanic(hero, mods);
+    setText(card.skillDesc, desc);
+    setText(card.mechanic, mech);
+    // the summary hides these texts; hovering shows them unless they are already spelled out
+    if (this.grid.classList.contains('is-detailed')) {
+      delete card.skillBox.dataset.tip;
+      delete card.mechanic.dataset.tip;
+    } else {
+      card.skillBox.dataset.tip = `${HEROES[hero].skill.name}|${desc}`;
+      card.mechanic.dataset.tip = `${HEROES[hero].name}|${mech}`;
+    }
     setText(card.cdMeta, `[${HEROES[hero].skill.key}] CD ${cd % 1 ? cd.toFixed(1) : cd}s`);
     const level = save.heroes[hero].level;
     setText(card.lv, String(level));

@@ -2060,7 +2060,8 @@
   grid-area: buys;
 }
 
-/* wide panel: the skill text has its own column, so the toggle is unnecessary */
+/* wide panel: a skill summary gets its own column (role in two lines, skill name, PERFECT);
+   the full texts appear on hover or with 「スキル説明」, so four heroes stay on one screen */
 @container camp (min-width: 1100px) {
   .camp-hero {
     grid-template-columns: minmax(190px, 230px) minmax(220px, 300px) minmax(0, 1fr) minmax(180px, 220px);
@@ -2072,8 +2073,15 @@
     grid-template-columns: minmax(0, 1fr);
     gap: 6px;
   }
-  .camp-party-detail {
+  .camp-party-grid:not(.is-detailed) .camp-skill-desc {
     display: none;
+  }
+  .camp-party-grid:not(.is-detailed) .camp-hero-mech {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    overflow: hidden;
   }
   .camp-hero.is-locked {
     grid-template-areas: 'top lock lock lock';
