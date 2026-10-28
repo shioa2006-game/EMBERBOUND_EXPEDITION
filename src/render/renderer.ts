@@ -64,6 +64,8 @@ export class Renderer implements IRenderer {
   private sceneTime = 0;
   private modeFade = 0; // black fade-in after switching scenes
   private introDark = 0;
+  /** Lantern Flare afterglow for the scenery (1 → 0). */
+  private flareGlow = 0;
   private endDark = 0;
   private endDarkTarget = 0;
   private endColor = '#000000';
@@ -218,6 +220,7 @@ export class Renderer implements IRenderer {
     this.lastSimTime = battle.time;
     this.scroll = 0;
     this.introDark = 0;
+    this.flareGlow = 0;
     this.endDark = 0;
     this.endDarkTarget = 0;
     if (this.mode !== 'battle') {
@@ -512,6 +515,7 @@ export class Renderer implements IRenderer {
         if (e.low) W.banners.show('warn', 'ランタンが消えかけている！', '');
         break;
       case 'flare':
+        this.flareGlow = 1;
         W.banners.show('flare', 'LANTERN FLARE', `灯火が燃え上がる ― 残り ${Math.round(e.lantern)}秒`);
         fx.glow(106, GROUND_Y - 30, 46, COL.ember, 1.5, 0.9);
         pt.burst(106, GROUND_Y - 30, 30, 30, 120, 1.0, COL.emberHi, 2, P_GLOW, -60, 1.5);
@@ -955,6 +959,7 @@ export class Renderer implements IRenderer {
     W.banners.update(realDt);
     this.flushBurns(realDt);
     if (this.introDark > 0) this.introDark = Math.max(0, this.introDark - realDt);
+    if (this.flareGlow > 0) this.flareGlow = Math.max(0, this.flareGlow - realDt * .45);
     if (this.modeFade > 0) this.modeFade = Math.max(0, this.modeFade - realDt * 2.5);
     this.endDark += (this.endDarkTarget - this.endDark) * Math.min(1, realDt * 2);
 
@@ -966,7 +971,15 @@ export class Renderer implements IRenderer {
     g.globalAlpha = 1;
     g.globalCompositeOperation = 'source-over';
     g.imageSmoothingEnabled = true;
-    drawAreaBackground(g, battle.area.id, this.scroll, W.simTime);
+    // The party's lantern lights the scenery; the dark closes in as it burns down.
+    let lightX = 0, carriers = 0;
+    for (const h of battle.heroes) if (h.alive) { lightX += h.x; carriers++; }
+    drawAreaBackground(g, battle.area.id, this.scroll, W.simTime, {
+      lantern: battle.lanternMax > 0 ? battle.lantern / battle.lanternMax : 1,
+      flare: this.flareGlow,
+      lightX: carriers ? lightX / carriers : 106,
+      overdrive: battle.overdriveActive > 0,
+    });
     g.setTransform(this.worldDensity, 0, 0, this.worldDensity, 0, 0);
     g.globalAlpha = 1;
     g.globalCompositeOperation = 'source-over';
