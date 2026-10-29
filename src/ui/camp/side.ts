@@ -1,8 +1,8 @@
-// Stage column beside the tabs: the party at a glance and the departure control every tab shares.
-// On narrow windows only the departure bar remains (the party summary is hidden by CSS).
+// Stage column beside the tabs (the party at a glance) and the departure control every tab shares:
+// at the right end of the tab row on wide windows, a bottom bar on narrow ones (layout in camp.css).
 import { BAL, gearTier, nextMilestone } from '../../core/balance.ts';
 import { heroLevelCost } from '../../core/state.ts';
-import { HERO_ORDER, type HeroId } from '../../core/types.ts';
+import { HERO_ORDER, type AreaId, type HeroId } from '../../core/types.ts';
 import { AREAS } from '../../data/areas.ts';
 import { HEROES } from '../../data/heroes.ts';
 import type { IconKey } from '../../render/sprites/index.ts';
@@ -20,9 +20,12 @@ export class CampSide {
   private partyState: HTMLElement;
   private rows: HTMLElement;
   private destination: HTMLElement;
+  /** The destination again, inside the button (wide windows show only the button). */
+  private buttonDest: HTMLElement;
   private destSub: HTMLElement;
   private destMeta: HTMLElement;
   private departBtn: HTMLButtonElement;
+  private shownArea: AreaId | null = null;
 
   constructor(host: CampHost) {
     this.host = host;
@@ -48,11 +51,13 @@ export class CampSide {
     this.destination = h('strong', 'camp-depart-destination');
     this.destSub = h('span', 'camp-cta-sub');
     this.destMeta = h('span', 'camp-cta-meta');
+    this.buttonDest = h('span', 'camp-depart-dest');
     this.departBtn = h(
       'button',
       { class: 'camp-btn camp-depart', attrs: { type: 'button' }, on: { click: () => this.depart() } },
       h('span', 'camp-depart-main', '出発'),
       keycap('Space'),
+      this.buttonDest,
     );
     this.cta = h(
       'footer',
@@ -69,6 +74,16 @@ export class CampSide {
     const def = AREAS[id];
     const a = save.areas[id];
     setText(this.destination, def.name);
+    setText(this.buttonDest, def.name);
+    if (this.shownArea && this.shownArea !== id) {
+      // the destination changed (route pick, new area): let it glow once on the departure control
+      for (const el of [this.destination, this.buttonDest]) {
+        el.classList.remove('is-changed');
+        void el.offsetWidth;
+        el.classList.add('is-changed');
+      }
+    }
+    this.shownArea = id;
     setText(this.destSub, def.subtitle);
     this.destMeta.replaceChildren(areaPips(a.best, a.bestEver), areaStars(a.stars, 14));
     this.cta.style.setProperty('--accent', def.palette.accent);

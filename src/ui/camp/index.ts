@@ -47,7 +47,7 @@ export class CampView implements ICampView {
   private notices: Notice[] = [];
   private modsCache: Mods | null = null;
   private modal: { layer: HTMLElement; close: () => void } | null = null;
-  private bubble: { tab: CampTab; el: HTMLElement } | null = null;
+  private bubble: { tab: CampTab; els: HTMLElement[] } | null = null;
   private treeBubbleChecked = false;
   private newChecked = new Set<CampTab>();
   private saveRef: SaveData | null = null;
@@ -325,17 +325,21 @@ export class CampView implements ICampView {
     this.clearBubble();
     const btn = this.tabBtns.get(tab);
     if (!btn) return;
-    const el = h('button', {
-      class: 'camp-tabs-bubble',
+    // Wide windows show the nudge under the party summary (the tab row is busy with the
+    // departure control); narrow windows show it in the tab row. CSS picks one.
+    const make = (cls: string) => h('button', {
+      class: cls,
       attrs: { type: 'button' },
       on: { click: () => this.userSwitch(tab) },
     }, text, ' →');
-    this.tabBar?.appendChild(el);
-    this.bubble = { tab, el };
+    const inTabs = make('camp-tabs-bubble'), inSide = make('camp-side-bubble');
+    this.tabBar?.appendChild(inTabs);
+    this.side?.el.appendChild(inSide);
+    this.bubble = { tab, els: [inTabs, inSide] };
   }
 
   private clearBubble(): void {
-    if (this.bubble) this.bubble.el.remove();
+    if (this.bubble) for (const el of this.bubble.els) el.remove();
     this.bubble = null;
   }
 

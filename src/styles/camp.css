@@ -482,13 +482,13 @@
 }
 
 @media (min-width: 900px) {
+  /* Departure is a camp-wide action: it lives at the right end of the tab row on every tab. */
   .camp {
-    grid-template-columns: var(--camp-side) minmax(0, 1fr);
-    grid-template-rows: auto minmax(0, 1fr) auto;
+    grid-template-columns: var(--camp-side) minmax(0, 1fr) auto;
+    grid-template-rows: auto minmax(0, 1fr);
     grid-template-areas:
-      'side tabs'
-      'side pages'
-      'cta  pages';
+      'side tabs  cta'
+      'side pages pages';
   }
 
   /* The scene canvas (drawn by the shell) is laid over the top of this column. */
@@ -497,31 +497,61 @@
     display: flex;
     flex-direction: column;
     min-height: 0;
-    padding: calc(var(--camp-scene-h) + var(--camp-gap) * 2) var(--camp-gap) 10px;
+    padding: calc(var(--camp-scene-h) + var(--camp-gap) * 2) var(--camp-gap) var(--camp-gap);
     border-right: 1px solid #95815b55;
     background: linear-gradient(180deg, #0a10144d, #0a101400 40%);
     overflow: hidden auto;
   }
 
   .camp-cta {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 10px;
-    padding: 10px var(--camp-gap) var(--camp-gap);
+    gap: 12px;
+    padding: 6px 14px;
     border-top: 0;
-    border-right: 1px solid #95815b55;
-    background: none;
+    border-bottom: 1px solid #95815b7a;
+    background: var(--paper-grain), #192328;
     box-shadow: none;
   }
 
-  .camp-cta .camp-depart {
-    width: 100%;
+  /* Only the button: the destination is its second line, so the tabs keep their room. */
+  .camp-cta-target {
+    display: none;
   }
 
-  /* The skill tree takes the whole width; the departure control shrinks into the tab row. */
+  .camp-cta .camp-depart {
+    display: grid;
+    grid-template-columns: auto auto;
+    grid-template-areas:
+      'main key'
+      'dest dest';
+    align-items: center;
+    justify-items: center;
+    gap: 0 8px;
+    min-width: 0;
+    min-height: 48px;
+    padding: 3px 16px 4px;
+  }
+
+  .camp-cta .camp-depart-main {
+    grid-area: main;
+    font-size: var(--fs-l);
+  }
+
+  .camp-cta .camp-kbd {
+    grid-area: key;
+  }
+
+  .camp-cta .camp-depart-dest {
+    grid-area: dest;
+    display: block;
+  }
+
+  .camp-tabs-bubble {
+    display: none;
+  }
+
+  /* The skill tree takes the whole width: the stage column folds away. */
   .app[data-camp-tab='tree'] .camp {
     grid-template-columns: minmax(0, 1fr) auto;
-    grid-template-rows: auto minmax(0, 1fr);
     grid-template-areas:
       'tabs  cta'
       'pages pages';
@@ -530,32 +560,62 @@
   .app[data-camp-tab='tree'] .camp-side {
     display: none;
   }
+}
 
-  .app[data-camp-tab='tree'] .camp-cta {
-    flex-direction: row;
-    align-items: center;
-    padding: 6px 14px;
-    border-right: 0;
-    border-bottom: 1px solid #95815b7a;
-    background: var(--paper-grain), #192328;
+.camp-depart-dest {
+  display: none;
+  max-width: 180px;
+  overflow: hidden;
+  font-family: var(--font-story);
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  letter-spacing: .02em;
+  line-height: 1.2;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.camp-side-bubble {
+  margin-top: 10px;
+  padding: 8px 10px;
+  border: 1px solid #c8a66a;
+  border-radius: 6px 3px 6px 3px;
+  background: #493720;
+  color: #fff0d2;
+  font: inherit;
+  font-size: var(--fs-s);
+  text-align: left;
+  cursor: pointer;
+  animation: camp-hint-in 0.45s cubic-bezier(0.2, 1.3, 0.4, 1) both;
+}
+.camp-side-bubble:hover { background: #5b4428; }
+.camp-side-bubble:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+
+/* 900–1199px: the tab row shares its width with the stage column and the departure button. */
+@media (min-width: 900px) and (max-width: 1199px) {
+  .camp .camp-tabs {
+    gap: 4px;
+    padding-inline: 10px;
   }
-
-  .app[data-camp-tab='tree'] .camp-cta-target .camp-label,
-  .app[data-camp-tab='tree'] .camp-cta-sub,
-  .app[data-camp-tab='tree'] .camp-cta-meta {
+  .camp .camp-tabs-key {
     display: none;
   }
-
-  .app[data-camp-tab='tree'] .camp-cta .camp-depart {
-    width: auto;
-    min-width: 0;
-    min-height: 44px;
-    padding: 4px 16px;
+  .camp .camp-tab {
+    gap: 5px;
+    padding: 6px 10px 8px 8px;
+    font-size: var(--fs-s);
+    letter-spacing: 0;
   }
-
-  .app[data-camp-tab='tree'] .camp-cta .camp-depart-main {
-    font-size: var(--fs-l);
+  .camp .camp-tab-icon {
+    width: 22px;
+    height: 22px;
   }
+}
+
+/* A changed destination glows once on the departure control. */
+.camp-depart-dest.is-changed,
+.camp-depart-destination.is-changed {
+  animation: camp-flash-gold 1.1s ease-out;
 }
 
 .camp-side-party {
