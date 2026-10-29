@@ -5,6 +5,7 @@ import { AREA_ORDER, HERO_ORDER } from '../../core/types.ts';
 import { AREAS } from '../../data/areas.ts';
 import { HEROES } from '../../data/heroes.ts';
 import { TREE } from '../../data/tree.ts';
+import { isTouch } from '../dom.ts';
 import { fmt, h, icon, type Child } from './dom.ts';
 import type { CampHost } from './host.ts';
 
@@ -78,7 +79,7 @@ export function openRekindle(host: CampHost): void {
   if (save.prestige === 0) {
     const unlocks: [string, string][] = [
       ['Relic', 'ビルドを決める秘宝（装備2枠）'],
-      ['Overdrive', 'Spaceで発動。攻撃速度×2・与ダメ+50%'],
+      ['Overdrive', `${isTouch() ? 'ボタン' : 'Space'}で発動。攻撃速度×2・与ダメ+50%`],
       ['Descent', 'ボスを倒すとそのまま次のエリアへ'],
       ['The Ember Heart', '第6のエリア（The Hollow再踏破で）'],
       ['Rekindledノード', 'スキルツリー外周の強力なノード'],

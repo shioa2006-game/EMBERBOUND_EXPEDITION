@@ -5,6 +5,7 @@ import '../../src/styles/hud.css';
 import '../../src/styles/screens.css';
 import '../../src/styles/camp.css';
 import '../../src/styles/storybook.css';
+import '../../src/styles/phone.css';
 import { CampView } from '../../src/ui/camp/index.ts';
 import { TopBar } from '../../src/ui/header.ts';
 import { Modals } from '../../src/ui/modal.ts';
@@ -86,7 +87,10 @@ async function audit() {
     const button = document.querySelector<HTMLButtonElement>('.camp-depart')!;
     const pages = document.querySelector<HTMLElement>('.camp-pages')!;
     const wide = innerWidth >= 900;
+    const phone = innerWidth <= 600;
     const standard = innerWidth >= 1280 && innerHeight >= 720;
+    // Phones: every tab sits in the bottom bar beside the departure button (nothing scrolls sideways).
+    if (phone) for (const t of document.querySelectorAll<HTMLElement>('.camp-tab')) if (t.offsetParent) visible(t, `Tab ${t.dataset.tab}`);
     const scene = document.querySelector('.viewport-wrap')!.getBoundingClientRect();
     measurements.scene = [Math.round(scene.width), Math.round(scene.height)];
     if (wide && !scenario.endsWith('tree') && scene.width < 280) failures.push(`Camp scene too small: ${Math.round(scene.width)}x${Math.round(scene.height)}`);
@@ -110,7 +114,7 @@ async function audit() {
       pages.scrollTop = 0;
       document.querySelector<HTMLButtonElement>('[data-tab="party"]')!.click(); await delay(350);
       visible(button, 'Departure on party tab');
-      if (wide && Math.abs(button.getBoundingClientRect().y - initial.y) > 1) failures.push('Departure moved between tabs');
+      if ((wide || phone) && Math.abs(button.getBoundingClientRect().y - initial.y) > 1) failures.push('Departure moved between tabs');
       const beforeGold = save.gold;
       const buy = [...document.querySelectorAll<HTMLButtonElement>('.camp-btn')].find(b => b.textContent?.includes('均等に強化'));
       const canBuy = !!buy && !buy.disabled && buy.getAttribute('aria-disabled') !== 'true';

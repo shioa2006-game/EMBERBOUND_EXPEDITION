@@ -309,6 +309,14 @@
   min-width: 0;
 }
 
+/* Lantern and stages: items of the strip here; a block of their own above the stage on phones (phone.css). */
+.hud-top {
+  display: contents;
+}
+.hud-area {
+  display: none;
+}
+
 /* lantern */
 .lantern {
   position: relative;

@@ -622,6 +622,7 @@ canvas {
   background: var(--bg-1);
 }
 .tb-pause { white-space: nowrap; }
+.tb-pause-icon { display: none; }
 
 /* ───────────────────────── Tooltip ───────────────────────── */
 

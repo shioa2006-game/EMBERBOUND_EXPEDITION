@@ -21,7 +21,7 @@ import { openSettings } from './settings.ts';
 import { TitleScreen } from './title.ts';
 import { Toasts, type ToastKind } from './toast.ts';
 import { Tutorial } from './tutorial.ts';
-import { campSceneHeight } from './layout.ts';
+import { campSceneHeight, isPhoneLayout } from './layout.ts';
 
 export type Screen = 'title' | 'battle' | 'camp';
 
@@ -50,6 +50,7 @@ export class App {
   private root: HTMLElement;
   private viewport: HTMLElement;
   private viewportWrap: HTMLElement;
+  private battleTop: HTMLElement;
   private campRoot: HTMLElement;
   private fxLayer: HTMLElement;
   private camp: ICampView | null = null;
@@ -86,6 +87,8 @@ export class App {
     this.viewport = h('div', { class: 'viewport', attrs: { 'aria-label': 'バトル画面' } });
     const viewportWrap = h('div', { class: 'viewport-wrap' }, this.viewport);
     this.viewportWrap = viewportWrap;
+    // Phones: the lantern and stage pips sit here, above the stage (see refit).
+    this.battleTop = h('div', { class: 'battle-top' });
     this.campRoot = h('section', { class: 'camp-root', attrs: { 'aria-label': '野営地' } });
     const modalLayer = h('div', { class: 'layer layer-modal' });
     const noticeLayer = h('div', { class: 'layer layer-notice' });
@@ -140,7 +143,7 @@ export class App {
       tutorialLayer,
     );
 
-    root.append(this.topbar.el, viewportWrap, this.hud.el, this.campRoot, this.title.el, tutorialLayer, this.fxLayer, modalLayer, noticeLayer, toastLayer);
+    root.append(this.topbar.el, this.battleTop, viewportWrap, this.hud.el, this.campRoot, this.title.el, tutorialLayer, this.fxLayer, modalLayer, noticeLayer, toastLayer);
     installTooltips(root);
 
     // keep shell-chrome buttons from stealing keyboard focus on mouse click (Space/Enter must stay game keys)
@@ -304,6 +307,7 @@ export class App {
 
   /** Resize the canvas and let the battle HUD line up with the stage's edges. */
   private refit(): void {
+    this.hud.dock(isPhoneLayout() ? this.battleTop : null);
     this.renderer.resize();
     const c = this.viewport.querySelector('canvas');
     if (this.screen === 'battle' && c && c.offsetWidth > 0) setVar(this.root, '--stage-w', `${Math.round(c.offsetWidth)}px`);
@@ -790,7 +794,7 @@ export class App {
     if (!b || b.ended || this.modals.isOpen() || this.notices.active) return;
     const p = this.renderer.clientToWorld(e.clientX, e.clientY);
     if (!p) return;
-    const u = b.enemyAt(p.x, p.y);
+    const u = b.enemyAt(p.x, p.y, e.pointerType === 'touch' ? 16 : 6);
     if (!u) return;
     if (b.canFocus()) {
       if (b.setFocus(u.id)) this.audio.play('uiClick');

@@ -8,7 +8,7 @@ import { AREA_ORDER, type AreaId, type HeroId, type SaveData } from '../core/typ
 import type { IAudio, MusicTrack, SfxName } from '../audio/api.ts';
 import { getStoryFrameIndex } from '../render/storybook/characters.ts';
 import { drawAreaBackground, drawAreaForeground, frameCount, getUnitSprite, type IconKey } from '../render/sprites/index.ts';
-import { fmt, fmtDuration, h, icon } from './dom.ts';
+import { fmt, fmtDuration, h, icon, tapWord } from './dom.ts';
 
 export interface NoticeCard {
   kind: string;
@@ -209,7 +209,7 @@ export function recruitCard(hero: HeroId, level: number): NoticeCard {
             { class: 'nt-info' },
             h('div', { class: 'nt-name', text: def.name }),
             h('div', { class: 'nt-title' }, h('span', { text: def.title }), h('span', { class: 'nt-lv', text: `Lv ${level} で参戦` })),
-            h('div', { class: 'nt-box' }, h('div', { class: 'nt-box-h', text: '新メカニクス' }), h('p', { text: def.mechanic })),
+            h('div', { class: 'nt-box' }, h('div', { class: 'nt-box-h', text: '新メカニクス' }), h('p', { text: def.mechanic.replace('クリック', tapWord()) })),
             h(
               'div',
               { class: 'nt-box nt-skill' },

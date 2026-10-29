@@ -4,6 +4,7 @@ import { buyNode, nodeView, ownedSynergies, type NodeStatus, type NodeView } fro
 import { HERO_ORDER, type HeroId, type SaveData, type TreeBranch, type TreeNodeDef } from '../../core/types.ts';
 import { HEROES } from '../../data/heroes.ts';
 import { SYNERGY_IDS, TREE, TREE_BY_ID } from '../../data/tree.ts';
+import { isTouch, tapWord } from '../dom.ts';
 import { append, clear, flashClass, fmt, h, icon, keycap, s, setAttr, setText } from './dom.ts';
 import { BRANCH_LABEL, BUILD_COLOR, HERO_COLOR, KIND_LABEL, nodeColor, type CampHost, type TabView } from './host.ts';
 
@@ -353,6 +354,10 @@ export class TreeTab implements TabView {
   private drag: { id: number; sx: number; sy: number; vx: number; vy: number; moved: boolean } | null = null;
   private suppressClick = false;
   private lastHoverSfx = 0;
+  private lastPointer = '';
+  /** Fingers on the stage, for two-finger zoom. */
+  private touches = new Map<number, { x: number; y: number }>();
+  private pinchDist = 0;
 
   constructor(host: CampHost) {
     this.host = host;
@@ -363,12 +368,13 @@ export class TreeTab implements TabView {
     this.svg = this.buildSvg();
     this.fxG = this.svg.querySelector('.camp-tree-fx') as SVGGElement;
     this.tip = h('div', 'camp-tree-tip');
+    const touch = isTouch();
     const zoom = h(
       'div',
       'camp-tree-zoom',
-      h('button', { class: 'camp-btn camp-btn--icon', attrs: { type: 'button', 'aria-label': '拡大' }, data: { tip: '拡大|ホイール・＋キーでも拡大' }, on: { click: () => this.zoomBy(1 / 1.35) } }, '＋'),
-      h('button', { class: 'camp-btn camp-btn--icon', attrs: { type: 'button', 'aria-label': '縮小' }, data: { tip: '縮小|ホイール・－キーでも縮小' }, on: { click: () => this.zoomBy(1.35) } }, '－'),
-      h('button', { class: 'camp-btn camp-btn--icon', attrs: { type: 'button', 'aria-label': '全体表示' }, data: { tip: '全体表示|0キー・背景のダブルクリックでも' }, on: { click: () => this.fit() } }, '全体'),
+      h('button', { class: 'camp-btn camp-btn--icon', attrs: { type: 'button', 'aria-label': '拡大' }, data: { tip: touch ? '拡大|2本の指で広げても拡大' : '拡大|ホイール・＋キーでも拡大' }, on: { click: () => this.zoomBy(1 / 1.35) } }, '＋'),
+      h('button', { class: 'camp-btn camp-btn--icon', attrs: { type: 'button', 'aria-label': '縮小' }, data: { tip: touch ? '縮小|2本の指でつまんでも縮小' : '縮小|ホイール・－キーでも縮小' }, on: { click: () => this.zoomBy(1.35) } }, '－'),
+      h('button', { class: 'camp-btn camp-btn--icon', attrs: { type: 'button', 'aria-label': '全体表示' }, data: { tip: touch ? '全体表示|ツリー全体を表示' : '全体表示|0キー・背景のダブルクリックでも' }, on: { click: () => this.fit() } }, '全体'),
     );
     const legend = h(
       'div',
@@ -430,7 +436,9 @@ export class TreeTab implements TabView {
       this.hints,
       'campTreeHelp',
       'Emberでスキルツリーを強化',
-      '光っているノードは今すぐ習得できる。クリックで詳細、ダブルクリック／Enterで習得。ホイールで拡大・ドラッグで移動。',
+      isTouch()
+        ? '光っているノードは今すぐ習得できる。タップで詳細を出し、下の「習得する」で習得。2本の指で拡大・1本の指で移動。'
+        : '光っているノードは今すぐ習得できる。クリックで詳細、ダブルクリック／Enterで習得。ホイールで拡大・ドラッグで移動。',
     );
     this.checkSynergyHint(new Map(this.allViews().map((v) => [v.node.id, v])));
   }
@@ -701,6 +709,8 @@ export class TreeTab implements TabView {
     });
     g.addEventListener('dblclick', (e) => {
       e.preventDefault();
+      // fingers buy with the detail's button only: a double tap is too easy to make by accident
+      if (this.lastPointer === 'touch') return;
       this.buy(def.id, true);
     });
 
@@ -814,7 +824,7 @@ export class TreeTab implements TabView {
         class: `camp-goal-btn${goal.affordable ? ' is-ready' : ''}`,
         style: `--nc:${nodeColor(n)}`,
         attrs: { type: 'button' },
-        data: { tip: '次の目標|もっとも安く習得できる新能力・挙動変化ノード\nクリックでツリー上の位置を表示' },
+        data: { tip: `次の目標|もっとも安く習得できる新能力・挙動変化ノード\n${tapWord()}でツリー上の位置を表示` },
         on: {
           click: () => {
             this.select(n.id);
@@ -933,7 +943,7 @@ export class TreeTab implements TabView {
       reqList ? h('div', 'camp-td-section', h('div', 'camp-label', '習得条件'), reqList) : null,
       costRow,
       n.kind === 'root' ? null : btn,
-      this.hovered && this.hovered !== this.selected ? h('div', 'camp-td-foot camp-dim', 'クリックで選択・ダブルクリックで習得') : null,
+      this.hovered && this.hovered !== this.selected && !isTouch() ? h('div', 'camp-td-foot camp-dim', 'クリックで選択・ダブルクリックで習得') : null,
     ]);
   }
 
@@ -1071,10 +1081,32 @@ export class TreeTab implements TabView {
       { passive: false },
     );
     svg.addEventListener('pointerdown', (e) => {
+      this.lastPointer = e.pointerType;
+      if (e.pointerType === 'touch') {
+        this.touches.set(e.pointerId, { x: e.clientX, y: e.clientY });
+        if (this.touches.size === 2) {
+          // a second finger turns the drag into a pinch
+          this.pinchDist = this.fingerSpan();
+          this.drag = null;
+          this.stage.classList.remove('is-dragging');
+          this.tip.classList.remove('is-on');
+          return;
+        }
+      }
       if (e.button !== 0) return;
       this.drag = { id: e.pointerId, sx: e.clientX, sy: e.clientY, vx: this.view.x, vy: this.view.y, moved: false };
     });
     svg.addEventListener('pointermove', (e) => {
+      if (this.touches.has(e.pointerId)) {
+        this.touches.set(e.pointerId, { x: e.clientX, y: e.clientY });
+        if (this.touches.size === 2 && this.pinchDist > 0) {
+          const span = this.fingerSpan();
+          const [a, b] = [...this.touches.values()];
+          if (span > 0) this.zoomAt(this.pinchDist / span, this.svgPoint((a.x + b.x) / 2, (a.y + b.y) / 2), false);
+          this.pinchDist = span;
+          return;
+        }
+      }
       const d = this.drag;
       if (!d || d.id !== e.pointerId) return;
       const dx = e.clientX - d.sx;
@@ -1097,6 +1129,13 @@ export class TreeTab implements TabView {
       this.applyView();
     });
     const end = (e: PointerEvent) => {
+      if (this.touches.delete(e.pointerId) && this.pinchDist > 0) {
+        // the fingers of a pinch never select a node when they lift
+        if (this.touches.size === 0) this.pinchDist = 0;
+        this.suppressClick = true;
+        window.setTimeout(() => (this.suppressClick = false), 0);
+        return;
+      }
       const d = this.drag;
       if (!d || d.id !== e.pointerId) return;
       if (d.moved) {
@@ -1112,6 +1151,11 @@ export class TreeTab implements TabView {
       if ((e.target as Element).closest('.camp-node')) return;
       this.fit();
     });
+  }
+
+  private fingerSpan(): number {
+    const [a, b] = [...this.touches.values()];
+    return a && b ? Math.hypot(a.x - b.x, a.y - b.y) : 0;
   }
 
   private unitsPerPx(): number {

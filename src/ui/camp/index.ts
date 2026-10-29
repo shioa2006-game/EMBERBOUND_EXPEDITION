@@ -18,10 +18,11 @@ import { TreeTab } from './tree.ts';
 
 const TAB_ORDER: CampTab[] = ['expedition', 'party', 'tree', 'relics'];
 
-const TAB_META: Record<CampTab, { label: string; icon: IconKey }> = {
+/** `short`: the label in a phone's bottom tab bar, where four tabs share the width with the departure button. */
+const TAB_META: Record<CampTab, { label: string; short?: string; icon: IconKey }> = {
   expedition: { label: '遠征', icon: 'lantern' },
   party: { label: 'パーティ', icon: 'sword' },
-  tree: { label: 'スキルツリー', icon: 'ember' },
+  tree: { label: 'スキルツリー', short: 'スキル', icon: 'ember' },
   relics: { label: 'レリック', icon: 'shard' },
 };
 
@@ -85,6 +86,7 @@ export class CampView implements ICampView {
         },
         icon(meta.icon, 32, 'camp-tab-icon'),
         h('span', 'camp-tab-label', meta.label),
+        meta.short ? h('span', { class: 'camp-tab-short', attrs: { 'aria-hidden': 'true' } }, meta.short) : null,
         h('span', 'camp-tab-badge'),
       );
       this.tabBtns.set(tab, btn);
@@ -99,6 +101,7 @@ export class CampView implements ICampView {
     this.pages.set('relics', new RelicsTab(host));
 
     this.pagesEl = h('div', 'camp-pages');
+    this.pagesEl.addEventListener('scroll', this.onPagesScroll, { passive: true });
     for (const [tab, page] of this.pages) {
       page.el.hidden = true;
       page.el.setAttribute('role', 'tabpanel');
@@ -387,10 +390,23 @@ export class CampView implements ICampView {
       next.el.classList.add(dir > 0 ? 'is-enter-right' : dir < 0 ? 'is-enter-left' : 'is-enter');
       if (this.pagesEl) this.pagesEl.scrollTop = 0;
       next.el.scrollTop = 0;
+      this.onPagesScroll();
     }
     if (this.visible) next.onShow();
     this.syncBadges();
   }
+
+  /** Phones: reading further down a tab folds the camp scene into a thin band (phone.css); the top unfolds it. */
+  private onPagesScroll = (): void => {
+    const app = this.el?.closest('.app');
+    const p = this.pagesEl;
+    if (!app || !p) return;
+    const folded = app.hasAttribute('data-camp-scrolled');
+    // Only fold when the page stays scrollable afterwards (the band frees ~90px); otherwise the
+    // content would snap back to the top, unfold the scene and flicker.
+    if (p.scrollTop > 40 && !folded && p.scrollHeight - p.clientHeight > 120) app.setAttribute('data-camp-scrolled', '');
+    else if (p.scrollTop < 8 && folded) app.removeAttribute('data-camp-scrolled');
+  };
 
   // ─────────────────────────── input ───────────────────────────
 

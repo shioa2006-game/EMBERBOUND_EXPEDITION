@@ -251,12 +251,12 @@ export class Battle {
   }
 
   /** Returns the enemy whose box contains world point (x, y), if any. */
-  enemyAt(x: number, y: number): Unit | null {
+  /** The enemy under a point; `pad` widens every box (fingers are less precise than a mouse). */
+  enemyAt(x: number, y: number, pad = 6): Unit | null {
     let best: Unit | null = null;
     for (const e of this.enemies) {
       if (!e.alive || e.untargetable > 0) continue;
       const b = SIZE_BOX[e.size];
-      const pad = 6;
       if (x >= e.x - b.w / 2 - pad && x <= e.x + b.w / 2 + pad && y <= e.y + pad && y >= e.y - b.h - pad) {
         if (!best || Math.abs(e.x - x) < Math.abs(best.x - x)) best = e;
       }

@@ -44,7 +44,7 @@ const list: EnemyDef[] = [
   {
     id: 'siren', name: 'Siren', sprite: 'siren', rank: 'normal', size: 'medium', hp: 0.9, dmg: 0.6, gold: 1.4, interval: 2.2, attack: 'magic', target: 'random',
     abilities: [{ id: 'tidalHymn', name: 'Tidal Hymn', cooldown: 6, initialDelay: 3, windup: 1.4, interruptible: true, effect: { kind: 'healAllies', amount: 0.4 } }],
-    desc: '仲間を回復する。クリックでMarkして優先して倒そう。',
+    desc: '仲間を回復する。Markして優先して倒そう。',
   },
   {
     id: 'coral_knight', name: 'Coral Knight', sprite: 'coral_knight', rank: 'elite', size: 'large', hp: 5, dmg: 1.2, gold: 5, interval: 1.9, attack: 'melee', target: 'front', protector: 0.2,

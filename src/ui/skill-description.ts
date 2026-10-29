@@ -2,6 +2,7 @@
 import { BAL } from '../core/balance.ts';
 import type { HeroId, Mods } from '../core/types.ts';
 import { HEROES } from '../data/heroes.ts';
+import { tapWord } from './dom.ts';
 
 const pct = (v: number) => `${+(v * 100).toFixed(2)}%`;
 
@@ -38,7 +39,7 @@ export function skillDescription(hero: HeroId, m: Mods): string {
 }
 
 export function heroMechanic(hero: HeroId, m: Mods): string {
-  if (hero === 'ranger') return `高速の矢とクリティカル。敵をクリックしてMark（被ダメージ＋${pct(m.markBonus)}・全員で集中攻撃）。`;
+  if (hero === 'ranger') return `高速の矢とクリティカル。敵を${tapWord()}してMark（被ダメージ＋${pct(m.markBonus)}・全員で集中攻撃）。`;
   return HEROES[hero].mechanic;
 }
 

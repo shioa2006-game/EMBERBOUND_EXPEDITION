@@ -5,6 +5,7 @@ import '../../src/styles/hud.css';
 import '../../src/styles/screens.css';
 import '../../src/styles/camp.css';
 import '../../src/styles/storybook.css';
+import '../../src/styles/phone.css';
 import { CampView } from '../../src/ui/camp/index.ts';
 import { TopBar } from '../../src/ui/header.ts';
 import { Modals } from '../../src/ui/modal.ts';
@@ -17,7 +18,7 @@ import { Renderer } from '../../src/render/renderer.ts';
 import { Battle } from '../../src/core/battle.ts';
 import { AREA_ORDER, type RunResult } from '../../src/core/types.ts';
 import { TREE } from '../../src/data/tree.ts';
-import { campSceneHeight } from '../../src/ui/layout.ts';
+import { campSceneHeight, isPhoneLayout } from '../../src/ui/layout.ts';
 import { perfectShort, skillDescription } from '../../src/ui/skill-description.ts';
 import { makeSave } from '../helpers/saves.ts';
 import type { IAudio } from '../../src/audio/api.ts';
@@ -56,7 +57,8 @@ const battle=new Battle({save,areaId:'heart',seed:1234});
 const settings=()=>openSettings({modals,audio,getSave:()=>save,applySettings(){},replaceSave(){throw Error('Fixture must not import');},resetSave(){throw Error('Fixture must not delete');},toast(){}});
 const pause=()=>{paused++;return openPause({modals,openSettings:settings,retreat(){}},battle);};
 const topbar=new TopBar({getSave:()=>save,runArea:()=>battleMode?battle.area:null,liveLoot:()=>null,livePlayTime:()=>0,soundOn:()=>false,toggleSound(){},openSettings:settings,openPause:pause});
-root.append(topbar.el,viewportWrap,campRoot,modalRoot,noticeRoot);
+const battleTop=document.createElement('div');battleTop.className='battle-top';
+root.append(topbar.el,battleTop,viewportWrap,campRoot,modalRoot,noticeRoot);
 window.addEventListener('keydown',e=>{if(notices.active){notices.handleKey(e);e.stopImmediatePropagation();}else if(modals.isOpen()){modals.handleKey(e);e.stopImmediatePropagation();}},true);
 camp.mount(campRoot,{getSave:()=>save,audio,firstTime:()=>false,commit:()=>{camp.refresh();topbar.update();},startRun(){},onRekindled(){},toast(){}});
 const tab=scenario==='review-swap'?'relics':scenario==='review-tree-purchase'?'tree':['review-party','review-milestone'].includes(scenario)?'party':'expedition';
@@ -67,7 +69,7 @@ if(battleMode){
   camp.hide();campRoot.hidden=true;
   for(let i=0;i<300&&battle.phase!=='fight';i++)battle.tick(1/60);
   hud=new BattleHud({getSave:()=>save,castSkill:h=>{battle.cast(h);},toggleAuto(){},activateOverdrive(){battle.activateOverdrive();},retreat(){}});
-  root.insertBefore(hud.el,modalRoot);hud.bind(battle);renderer.beginBattle(battle);
+  root.insertBefore(hud.el,modalRoot);hud.dock(isPhoneLayout()?battleTop:null);hud.bind(battle);renderer.beginBattle(battle);
 }
 function paint(){if(battleMode){renderer.renderBattle(battle,1/60);hud?.update(0);}else renderer.renderCamp(save,1/60);requestAnimationFrame(paint);}
 requestAnimationFrame(paint);
@@ -126,6 +128,15 @@ async function audit(){
   if(scenario==='review-battle'){
     visible(document.querySelector('.tb-pause')!,'Pause');
     document.querySelectorAll('.skill').forEach(b=>visible(b,'Battle skill'));
+    // Every control and readout on screen at once, nothing covering another (phones included).
+    visible(document.querySelector('.btn.retreat')!,'Retreat');
+    visible(document.querySelector('.overdrive')!,'Overdrive');
+    visible(document.querySelector('.run-loot')!,'Run loot');
+    visible(document.querySelector('.lantern')!,'Lantern');
+    document.querySelectorAll('.cur:not(.hidden) .cur-value').forEach(v=>visible(v,'Currency'));
+    const cards=[...document.querySelectorAll('.hero-card')];
+    measurements.heroCards=cards.map(c=>visible(c,'Hero card'));
+    check(cards.every(c=>c.getBoundingClientRect().width>=120),'Hero cards squeezed');
     // Skills no longer open a full tooltip over the field: a one-line hint sits on the floor band instead.
     const ranger=[...document.querySelectorAll<HTMLElement>('.skill')].find(e=>e.getAttribute('aria-label')?.startsWith('Arrow Rain'))!;
     check(!ranger.dataset.tip,'Battle skill still opens a full tooltip');
@@ -191,6 +202,11 @@ async function audit(){
       const text=document.querySelector('.pause-skills')?.textContent??'';
       check(text.includes(skillDescription('ranger',battle.mods).split('\n')[0])&&text.includes('4体以上、またはスタン中の敵に命中させる'),'Pause lacks the full skill text');
       visible(document.querySelector('.pause-menu .btn')!,'Resume');
+      // Narrow modals: the skill texts read by scrolling down only.
+      const modal=document.querySelector<HTMLElement>('.modal-pause')!;
+      check(modal.scrollWidth<=modal.clientWidth+1,`Pause scrolls sideways: ${modal.scrollWidth}/${modal.clientWidth}`);
+      const right=modal.getBoundingClientRect().right;
+      check([...document.querySelectorAll('.pause-skill')].every(c=>c.getBoundingClientRect().right<=right+1),'Pause skill card clipped');
     }
   }
   check(document.documentElement.scrollWidth<=innerWidth,'Horizontal overflow');

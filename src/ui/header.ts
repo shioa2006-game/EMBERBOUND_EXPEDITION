@@ -52,6 +52,10 @@ export function speakerSvg(on: boolean): SVGSVGElement {
   return pixelSvg([...base, ...waves], 'svg-icon');
 }
 
+function pauseSvg(): SVGSVGElement {
+  return pixelSvg([[1, 1, 2, 6], [5, 1, 2, 6]], 'svg-icon tb-pause-icon');
+}
+
 interface Counter {
   root: HTMLElement;
   value: HTMLElement;
@@ -98,10 +102,11 @@ export class TopBar {
       tip: '設定|サウンド・表示・セーブデータ',
       on: { click: () => this.host.openSettings() },
     }, gearSvg());
+    // Phones show only the pause glyph (phone.css).
     this.pauseBtn = h('button', { class: 'btn small tb-pause hidden',
       attrs: { 'aria-label': '一時停止（Esc）' },
       on: { click: () => this.host.openPause?.() },
-    }, '一時停止 ', h('span', { class: 'key-badge', text: 'Esc' }));
+    }, pauseSvg(), h('span', { class: 'tb-pause-label', text: '一時停止' }), h('span', { class: 'key-badge', text: 'Esc' }));
 
     this.el = h(
       'header',

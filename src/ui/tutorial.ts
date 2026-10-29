@@ -6,9 +6,14 @@ import type { Battle } from '../core/battle.ts';
 import type { BattleEvent, HeroId, SaveData } from '../core/types.ts';
 import type { IAudio } from '../audio/api.ts';
 import type { IRenderer } from '../render/api.ts';
-import { h } from './dom.ts';
+import { h, isTouch, tapWord } from './dom.ts';
 import type { BattleHud } from './hud.ts';
 import { introCard, type NoticePlayer } from './notices.ts';
+
+/** "[1] " before a skill name for keyboards; nothing on touch screens. */
+function keyHint(key: string): string {
+  return isTouch() ? '' : `[${key}] `;
+}
 
 export interface TutorialHost {
   getSave(): SaveData;
@@ -154,7 +159,7 @@ export class Tutorial {
         this.lastHintWave = waveKey;
         this.mark(FLAG.interrupt);
         this.orangeCandidate = null;
-        this.startFreeze('interrupt', e.id, 'guardian', 'オレンジのゲージ＝溜め攻撃。', `[1] ${HEROES.guardian.skill.name}で中断！`, '中断するとBREAK！ 大ダメージ＋スタン。（クリックで再開）');
+        this.startFreeze('interrupt', e.id, 'guardian', 'オレンジのゲージ＝溜め攻撃。', `${keyHint('1')}${HEROES.guardian.skill.name}で中断！`, `中断するとBREAK！ 大ダメージ＋スタン。（${tapWord()}で再開）`);
         return;
       }
     }
@@ -166,7 +171,7 @@ export class Tutorial {
         this.lastHintWave = waveKey;
         this.mark(FLAG.sanctuary);
         this.purpleCandidate = null;
-        this.startFreeze('sanctuary', e.id, 'oracle', '紫のゲージは中断できない。', `[4] ${HEROES.oracle.skill.name}で防げ！`, 'Barrierが大技を吸収する。直前に張ればPERFECT。（クリックで再開）');
+        this.startFreeze('sanctuary', e.id, 'oracle', '紫のゲージは中断できない。', `${keyHint('4')}${HEROES.oracle.skill.name}で防げ！`, `Barrierが大技を吸収する。直前に張ればPERFECT。（${tapWord()}で再開）`);
         return;
       }
     }
@@ -177,7 +182,7 @@ export class Tutorial {
         const pick = [...ts].sort((x, y) => y.maxHp - x.maxHp)[0];
         this.lastHintWave = waveKey;
         this.mark(FLAG.mark);
-        this.startFreeze('mark', pick.id, null, '敵をクリックしてMark！', '（集中攻撃）', 'Markした敵は被ダメージ+20%、パーティ全員が狙う。もう一度クリックで解除。');
+        this.startFreeze('mark', pick.id, null, `敵を${tapWord()}してMark！`, '（集中攻撃）', `Markした敵は被ダメージ+20%、パーティ全員が狙う。もう一度${tapWord()}で解除。`);
         return;
       }
     }
@@ -192,7 +197,7 @@ export class Tutorial {
     if (b.mods.overdrive && !this.seen(FLAG.overdrive) && b.canOverdrive()) {
       this.lastHintWave = waveKey;
       this.mark(FLAG.overdrive);
-      this.showBubble(this.host.hud.overdriveEl(), 'Overdrive 準備完了！', '[Space]で6秒間、攻撃速度×2・ダメージ+50%！');
+      this.showBubble(this.host.hud.overdriveEl(), 'Overdrive 準備完了！', `${isTouch() ? 'タップ' : '[Space]'}で6秒間、攻撃速度×2・ダメージ+50%！`);
     }
   }
 

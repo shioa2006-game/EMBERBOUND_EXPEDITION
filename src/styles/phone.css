@@ -1,0 +1,791 @@
+/* EMBERBOUND EXPEDITION — phones held upright (≤600px wide) and touch screens. Loaded after every other sheet.
+   The width picks the layout (PHONE_QUERY in ui/layout.ts); hover/pointer picks touch behaviour, so a narrow
+   desktop window gets the phone layout but keeps its mouse tooltips and key hints. */
+
+/* ───────────────────────── every size ───────────────────────── */
+
+/* Notches and home indicators (index.html opts into viewport-fit=cover); zero on desktops. */
+.app {
+  padding: env(safe-area-inset-top, 0px) env(safe-area-inset-right, 0px) env(safe-area-inset-bottom, 0px) env(safe-area-inset-left, 0px);
+}
+.modal-layer {
+  padding:
+    max(24px, env(safe-area-inset-top, 0px)) max(24px, env(safe-area-inset-right, 0px))
+    max(24px, env(safe-area-inset-bottom, 0px)) max(24px, env(safe-area-inset-left, 0px));
+}
+
+/* The phone block above the stage (lantern, stage pips) exists only in phone battles. */
+.battle-top {
+  display: none;
+}
+
+/* ───────────────────────── touch screens ───────────────────────── */
+
+html {
+  -webkit-tap-highlight-color: transparent;
+  /* no double-tap zoom on rapid skill taps; pinch zoom still works */
+  touch-action: manipulation;
+}
+
+@media (hover: none) and (pointer: coarse) {
+  /* holding a finger to read a tooltip must not select text or open the image menu */
+  .app {
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    user-select: none;
+  }
+  /* key hints mean nothing without a keyboard */
+  .key-badge,
+  .camp-kbd,
+  .camp-tabs-key,
+  .title-hint,
+  .set-keys {
+    display: none !important;
+  }
+}
+
+/* ───────────────────────── phones ───────────────────────── */
+
+@media (max-width: 600px) {
+  .modal-layer {
+    padding:
+      max(12px, env(safe-area-inset-top, 0px)) max(10px, env(safe-area-inset-right, 0px))
+      max(12px, env(safe-area-inset-bottom, 0px)) max(10px, env(safe-area-inset-left, 0px));
+  }
+  .modal {
+    padding: 20px 16px 18px;
+  }
+  .tooltip {
+    max-width: calc(100vw - 12px);
+  }
+
+  /* ── top bar: currencies and the two buttons that matter. The area is named above the stage,
+        the camp names its destination; sound lives in Settings. */
+  .topbar {
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 8px;
+    height: 48px;
+    padding: 0 8px;
+  }
+  .tb-area,
+  .tb-sound {
+    display: none;
+  }
+  .tb-currencies {
+    gap: 6px;
+    min-width: 0;
+  }
+  .cur {
+    min-width: 0;
+    height: 34px;
+    gap: 3px;
+    padding: 0 8px 0 3px;
+  }
+  .cur-icon {
+    width: 22px;
+    height: 22px;
+  }
+  .cur-value {
+    font-size: 15px;
+  }
+  .tb-right {
+    gap: 6px;
+  }
+  .topbar .icon-btn {
+    width: 36px;
+    height: 36px;
+  }
+  .tb-pause {
+    min-width: 40px;
+    min-height: 36px;
+    padding: 0 11px;
+  }
+  .tb-pause-label,
+  .tb-pause .key-badge {
+    display: none;
+  }
+  .tb-pause-icon {
+    display: block;
+    width: 16px;
+    height: 16px;
+  }
+
+  /* ── battle: top bar / (spare) / lantern and stages over the stage at full width / (spare) / HUD at the bottom.
+        Tall phones split their spare height around the stage instead of leaving a hole in the HUD. */
+  .app[data-screen='battle'] {
+    grid-template-rows: auto minmax(0, 1fr) auto auto minmax(0, 1fr) auto;
+    grid-template-areas: 'top' '.' 'btop' 'view' '.' 'hud';
+  }
+  .app[data-screen='battle'] .battle-top {
+    grid-area: btop;
+    display: block;
+    position: relative;
+    z-index: 3;
+    padding: 6px 10px 8px;
+    background: linear-gradient(180deg, #150f1b, #100b15);
+    box-shadow: 0 2px 0 0 var(--line);
+  }
+  .app[data-screen='battle'] .viewport-wrap {
+    /* exactly the stage (400×180), so the HUD starts right under it */
+    aspect-ratio: 400 / 180;
+    max-height: 40vh;
+  }
+
+  .battle-top .hud-top {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas:
+      'area stages'
+      'lantern lantern';
+    align-items: center;
+    gap: 6px 10px;
+  }
+  .hud-area {
+    grid-area: area;
+    display: block;
+    min-width: 0;
+    overflow: hidden;
+    color: var(--text);
+    font-family: var(--font-story);
+    font-size: 15px;
+    line-height: 1.2;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .battle-top .stages {
+    grid-area: stages;
+    position: static;
+    gap: 6px;
+  }
+  .battle-top .pips {
+    gap: 3px;
+  }
+  .battle-top .pip {
+    width: 16px;
+    height: 16px;
+  }
+  .battle-top .pip img {
+    width: 12px;
+    height: 12px;
+  }
+  .battle-top .pip-boss {
+    width: 20px;
+    height: 20px;
+  }
+  .battle-top .pip-boss img {
+    width: 16px;
+    height: 16px;
+  }
+  .battle-top .pip-dot {
+    width: 5px;
+    height: 5px;
+  }
+  /* the boss clock hangs over the stage's sky, top right */
+  .battle-top .boss-timer {
+    top: calc(100% + 6px);
+    right: 8px;
+    bottom: auto;
+  }
+  .battle-top .lantern {
+    grid-area: lantern;
+    min-width: 0;
+    height: 26px;
+    gap: 8px;
+  }
+  .battle-top .lantern-icon,
+  .battle-top .lantern-icon img {
+    width: 24px;
+    height: 24px;
+  }
+  .battle-top .lantern-bar {
+    height: 12px;
+  }
+  .battle-top .lantern-read {
+    min-width: 52px;
+  }
+  .battle-top .lantern-sec {
+    font-size: 18px;
+  }
+  /* 停止中 / 残りわずか: after the seconds instead of over the area name */
+  .battle-top .lantern-tag {
+    position: static;
+    flex: none;
+    padding: 0;
+    font-size: 12px;
+  }
+
+  /* HUD: party, then Overdrive / loot / retreat, then the skills under the thumbs */
+  .app[data-screen='battle'] .hud {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto auto;
+    grid-template-areas:
+      'party party party'
+      'od loot retreat'
+      'skills skills skills';
+    gap: 8px;
+    padding: 10px 8px 10px;
+  }
+  .app[data-screen='battle'] .hud:has(.od-wrap.hidden) {
+    grid-template-areas:
+      'party party party'
+      'loot loot retreat'
+      'skills skills skills';
+  }
+  .hud-strip,
+  .hud-main {
+    display: contents;
+  }
+
+  .party {
+    grid-area: party;
+    max-width: none;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-auto-rows: clamp(42px, 5.6vh, 52px);
+    gap: 6px;
+  }
+  .party.solo {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .party.duo {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .hero-card {
+    gap: 6px;
+    padding: 3px 6px 3px 4px;
+  }
+  .hc-portrait {
+    width: 32px;
+    height: 32px;
+    margin-left: 0;
+  }
+  .hc-portrait img {
+    width: 28px;
+    height: 28px;
+  }
+  .hc-top {
+    gap: 5px;
+    height: 16px;
+  }
+  .hc-name {
+    font-size: 13px;
+  }
+  .hc-hp {
+    height: 14px;
+  }
+
+  .run-loot {
+    grid-area: loot;
+    height: 40px;
+    padding: 0 10px;
+    gap: 8px;
+  }
+  .btn.retreat {
+    grid-area: retreat;
+    min-height: 40px;
+  }
+
+  /* Overdrive: a bar-shaped button in the control row instead of the round gauge */
+  .od-wrap {
+    grid-area: od;
+    display: block;
+    width: auto;
+    min-width: 0;
+  }
+  .overdrive {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 40px;
+  }
+  .od-ring {
+    inset: 0;
+    border-radius: 0;
+    -webkit-mask: none;
+    mask: none;
+    background: linear-gradient(90deg, var(--ember) calc(var(--g) * 100%), #241a2e 0);
+    box-shadow:
+      0 -2px 0 0 var(--line),
+      0 2px 0 0 var(--line),
+      -2px 0 0 0 var(--line),
+      2px 0 0 0 var(--line);
+  }
+  .od-core {
+    flex-direction: row;
+    gap: 8px;
+    width: auto;
+    height: auto;
+    border: 0;
+    border-radius: 0;
+    background: none;
+    box-shadow: none;
+    text-shadow:
+      1px 0 0 #000,
+      -1px 0 0 #000,
+      0 1px 0 #000,
+      0 -1px 0 #000;
+  }
+  .od-label {
+    white-space: nowrap;
+    font-size: 11px;
+  }
+  .od-val {
+    font-size: 14px;
+  }
+  .overdrive.ready {
+    animation: od-bar-ready 0.7s ease-in-out infinite alternate;
+  }
+  .overdrive.ready .od-ring {
+    background: linear-gradient(90deg, var(--gold), var(--ember), #ff5a3a);
+    animation: none;
+  }
+  .overdrive.ready .od-core,
+  .overdrive.active .od-core {
+    background: none;
+    animation: none;
+  }
+  .overdrive.active .od-ring {
+    background: linear-gradient(90deg, #ffb35a calc(var(--g) * 100%), #3a1a10 0);
+  }
+
+  .skills {
+    grid-area: skills;
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 8px;
+    margin: 0;
+  }
+  .skill-slot {
+    width: auto;
+    height: clamp(78px, 13vh, 116px);
+  }
+  .skill {
+    gap: 4px;
+    padding: 6px 2px 8px;
+  }
+  .skill-face {
+    width: 40px;
+    height: 40px;
+  }
+  .skill-name {
+    max-width: 100%;
+    overflow: hidden;
+    font-size: 12px;
+    text-overflow: ellipsis;
+  }
+  .skill-auto {
+    right: -4px;
+  }
+
+  /* The skill hint may take two lines on a phone; it covers the party cards (the finger is on the skills
+     anyway), never the stage, which has no floor band to spare at this size. */
+  .app[data-screen='battle'] .skill-hint {
+    top: 10px;
+    bottom: auto;
+  }
+  .skill-hint {
+    flex-wrap: wrap;
+    gap: 0 8px;
+    max-width: calc(100% - 12px);
+    padding: 3px 10px;
+    font-size: 12px;
+    white-space: normal;
+  }
+  .sh-text {
+    flex-basis: 100%;
+  }
+}
+
+/* ───────────────────────── phones: camp ───────────────────────── */
+
+@media (max-width: 600px) {
+  /* The scene folds into a band once a tab's content is scrolled (camp/index.ts sets the attribute). */
+  .app[data-screen='camp'][data-camp-scrolled]:not([data-camp-tab='tree']) .viewport-wrap {
+    height: min(22vw, 84px);
+  }
+
+  /* Tabs move to a bottom bar under the thumbs; the departure button ends that bar on every tab
+     (the same "end of the tab row" as on desktops). */
+  .camp {
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-rows: minmax(0, 1fr) auto;
+    grid-template-areas:
+      'pages pages'
+      'tabs  cta';
+  }
+  .camp-tabs {
+    align-items: stretch;
+    gap: 0;
+    padding: 0;
+    overflow: visible;
+    border-top: 1px solid #95815b7a;
+    border-bottom: 0;
+    background: var(--paper-grain), #192328;
+  }
+  .camp .camp-tabs-key {
+    display: none;
+  }
+  .camp .camp-tab {
+    flex: 1 1 0;
+    flex-direction: column;
+    justify-content: center;
+    gap: 2px;
+    min-width: 0;
+    min-height: 58px;
+    margin: 0;
+    padding: 6px 2px 5px;
+    border: 0;
+    border-radius: 0;
+    background: none;
+    font-size: 11px;
+    letter-spacing: 0;
+  }
+  .camp .camp-tab:hover {
+    transform: none;
+  }
+  .camp .camp-tab.is-active {
+    background: linear-gradient(180deg, #ff8a3d26, transparent 80%);
+  }
+  .camp .camp-tab.is-active::before {
+    top: 0;
+    left: 14%;
+    right: 14%;
+  }
+  .camp .camp-tab-icon {
+    width: 24px;
+    height: 24px;
+  }
+  .camp-tab-short {
+    display: none;
+  }
+  .camp-tab:has(.camp-tab-short) .camp-tab-label {
+    display: none;
+  }
+  .camp-tab:has(.camp-tab-short) .camp-tab-short {
+    display: inline;
+  }
+  .camp .camp-tab-badge {
+    top: 6px;
+    right: calc(50% - 20px);
+  }
+  .camp .camp-tab.is-fresh .camp-tab-badge {
+    top: -10px;
+    right: 2px;
+  }
+  /* the "go to the skill tree" nudge floats above the bar instead of squeezing the tabs */
+  .camp-tabs-bubble {
+    position: absolute;
+    right: 8px;
+    bottom: calc(100% + 8px);
+    max-width: calc(100% - 16px);
+    margin: 0;
+    box-shadow: 0 6px 18px #0008;
+  }
+
+  .camp-cta {
+    gap: 0;
+    padding: 6px 8px;
+    border-top: 1px solid #95815b7a;
+    border-left: 1px solid #95815b55;
+    background: var(--paper-grain), #192328;
+    box-shadow: none;
+  }
+  .camp-cta-target {
+    display: none;
+  }
+  .camp-cta .camp-depart {
+    display: grid;
+    grid-template-areas:
+      'main'
+      'dest';
+    align-content: center;
+    justify-items: center;
+    gap: 1px;
+    min-width: 0;
+    width: clamp(92px, 28vw, 132px);
+    min-height: 46px;
+    height: 100%;
+    padding: 3px 8px 4px;
+  }
+  .camp-cta .camp-depart-main {
+    grid-area: main;
+    font-size: 19px;
+    letter-spacing: 0.12em;
+  }
+  .camp-cta .camp-depart-dest {
+    grid-area: dest;
+    display: block;
+    max-width: 100%;
+    font-size: 10px;
+  }
+
+  .camp-page {
+    padding: 10px 12px 14px;
+  }
+
+  /* one-time tips: smaller, without the lantern */
+  .camp-hint {
+    gap: 8px;
+    padding: 5px 8px;
+    border-left-width: 4px;
+  }
+  .camp-hint-icon {
+    display: none;
+  }
+
+  /* ── party: one compact row per hero, purchases always on screen */
+  .camp-party-head {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto auto;
+    grid-template-areas: 'power detail even';
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+  }
+  /* the top bar already shows Gold */
+  .camp-party-head .camp-purse {
+    display: none;
+  }
+  .camp-party-power {
+    grid-area: power;
+    display: grid;
+    gap: 0;
+    margin: 0;
+    font-size: var(--fs-xs);
+  }
+  .camp-party-power .camp-power-item {
+    gap: 6px;
+    white-space: nowrap;
+  }
+  .camp-party-power .camp-power-item b {
+    font-size: var(--fs-s);
+  }
+  .camp-party-detail {
+    grid-area: detail;
+  }
+  .camp-even {
+    grid-area: even;
+    min-height: 40px;
+    padding: 4px 12px;
+  }
+  .camp-party-grid {
+    gap: 6px;
+  }
+  .camp .camp-hero {
+    grid-template-columns: 48px minmax(0, 1fr);
+    grid-template-areas:
+      'face id'
+      'face core'
+      'buys buys'
+      'info info';
+    align-items: center;
+    gap: 4px 10px;
+    padding: 7px 8px 8px;
+  }
+  .camp-hero-top {
+    display: contents;
+  }
+  .camp .camp-hero .camp-portrait {
+    grid-area: face;
+    align-self: start;
+    width: 48px;
+    height: 48px;
+  }
+  .camp .camp-hero-id {
+    grid-area: id;
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+  }
+  .camp-hero-id > .camp-hero-title {
+    display: none;
+  }
+  .camp-hero-name {
+    font-size: var(--fs-m);
+  }
+  .camp-hero-lv {
+    margin: 0;
+  }
+  .camp-hero-lv-num {
+    font-size: var(--fs-m);
+  }
+  .camp-hero-tier {
+    margin-left: auto;
+  }
+  .camp .camp-hero-core {
+    grid-area: core;
+    gap: 3px;
+  }
+  .camp-hero .camp-stats {
+    gap: 0 14px;
+    padding: 0;
+    background: none;
+    font-size: var(--fs-xs);
+    line-height: 1.3;
+  }
+  .camp-hero .camp-stat--spd,
+  .camp-hero .camp-stat--crit {
+    display: none;
+  }
+  /* milestone: label, bar and "あと N" on one line */
+  .camp-hero .camp-ms {
+    grid-template-columns: auto minmax(40px, 1fr) auto;
+    align-items: center;
+    gap: 0 8px;
+    font-size: var(--fs-xs);
+    line-height: 1.3;
+  }
+  .camp-hero .camp-ms-head {
+    display: contents;
+  }
+  .camp-hero .camp-ms-head .camp-icon {
+    display: none;
+  }
+  .camp-hero .camp-ms-label {
+    grid-column: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .camp-hero .camp-ms-bar {
+    grid-column: 2;
+    grid-row: 1;
+  }
+  .camp-hero .camp-ms-left {
+    grid-column: 3;
+    margin: 0;
+    white-space: nowrap;
+  }
+  .camp .camp-hero .camp-buys {
+    grid-area: buys;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 6px;
+  }
+  .camp .camp-hero .camp-buy {
+    flex-direction: row;
+    justify-content: center;
+    gap: 6px;
+    min-height: 38px;
+    padding: 2px 4px;
+  }
+  .camp .camp-hero .camp-buy-label {
+    font-size: var(--fs-s);
+  }
+  .camp .camp-hero .camp-hero-info {
+    grid-area: info;
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .camp .camp-hero.is-locked {
+    grid-template-areas:
+      'face id'
+      'face lock';
+  }
+  .camp-hero.is-locked .camp-hero-id > .camp-hero-title {
+    display: block;
+  }
+  .camp-hero.is-locked .camp-hero-lockbox {
+    padding: 4px 8px;
+    font-size: var(--fs-xs);
+  }
+  .camp-hero.is-locked .camp-hero-lockbox .camp-icon {
+    width: 20px;
+    height: 20px;
+  }
+
+  /* ── skill tree: the tree fills the screen; the chosen node's details and purchase sit under it */
+  .camp-page--tree {
+    height: 100%;
+    min-height: 0;
+    padding-bottom: 10px;
+  }
+  .camp-tree-head {
+    flex-wrap: nowrap;
+    gap: 8px;
+    margin-bottom: 8px;
+  }
+  /* the top bar already shows Ember */
+  .camp-tree-head .camp-purse {
+    display: none;
+  }
+  .camp-goal {
+    flex: 1 1 auto;
+  }
+  /* "次の目標": the button says it */
+  .camp-goal > .camp-label {
+    display: none;
+  }
+  .camp-goal-btn {
+    min-height: 36px;
+    padding: 2px 10px;
+  }
+  .camp-tree-count {
+    font-size: var(--fs-s);
+    white-space: nowrap;
+  }
+  .camp-tree-body {
+    flex: 1 1 auto;
+    flex-direction: column;
+    gap: 8px;
+    min-height: 0;
+  }
+  .camp-tree-stage {
+    flex: 1 1 auto;
+    min-height: 200px;
+  }
+  .camp-tree-legend {
+    gap: 2px 8px;
+    padding: 2px 6px;
+    font-size: 11px;
+  }
+  .camp-tree-detail {
+    flex: none;
+    gap: 8px;
+    width: auto !important;
+    max-height: 46% !important;
+    padding: 10px 12px 0;
+  }
+  .camp-td-name {
+    font-size: var(--fs-m);
+  }
+  .camp-td-desc {
+    padding: 6px 10px;
+  }
+  /* the purchase stays at the bottom of the details while they scroll */
+  .camp-td-buy {
+    position: sticky;
+    bottom: 0;
+    z-index: 1;
+    flex: none;
+    min-height: 44px;
+    margin-bottom: 10px;
+    box-shadow: 0 -10px 12px var(--bg-1);
+  }
+}
+
+/* the smallest phones: the party numbers get their own line, purchase prices go under their labels */
+@media (max-width: 380px) {
+  .camp-party-head {
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas:
+      'power detail'
+      'even  even';
+  }
+  .camp .camp-hero .camp-buy {
+    flex-direction: column;
+    gap: 0;
+    min-height: 42px;
+    padding: 2px;
+    line-height: 1.15;
+  }
+  .camp .camp-hero .camp-buy-label,
+  .camp .camp-hero .camp-buy-cost {
+    font-size: var(--fs-xs);
+  }
+}
+
+@keyframes od-bar-ready {
+  to {
+    filter: brightness(1.25) drop-shadow(0 0 8px rgba(255, 216, 74, 0.7));
+  }
+}

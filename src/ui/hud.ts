@@ -5,7 +5,7 @@ import { BAL } from '../core/balance.ts';
 import type { Battle } from '../core/battle.ts';
 import { AREA_ORDER, HERO_ORDER, type BattleEvent, type HeroId, type SaveData, type Unit } from '../core/types.ts';
 import type { IconKey } from '../render/sprites/index.ts';
-import { clamp, clear, flash, fmt, h, icon, setAttr, setText, setVar, toggleClass } from './dom.ts';
+import { clamp, clear, flash, fmt, h, icon, isTouch, setAttr, setText, setVar, toggleClass, touchHold } from './dom.ts';
 import { heroMechanic, perfectShort } from './skill-description.ts';
 
 export interface HudHost {
@@ -85,6 +85,10 @@ export class BattleHud {
   private lootShardWrap: HTMLElement;
   private retreatBtn: HTMLButtonElement;
   private retreatArmed = 0;
+  private strip: HTMLElement;
+  private areaEl: HTMLElement;
+  /** Lantern, stage pips and (phones) the area name: see dock(). */
+  readonly topEl: HTMLElement;
 
   // main
   private partyEl: HTMLElement;
@@ -124,6 +128,9 @@ export class BattleHud {
     this.pipsEl = h('div', { class: 'pips' });
     this.bossTimer = h('div', { class: 'boss-timer hidden' });
     const stages = h('div', { class: 'stages' }, this.segChips, this.pipsEl, this.bossTimer);
+    // The area's name repeats the top bar's; only phones show it (their top bar has no room).
+    this.areaEl = h('div', { class: 'hud-area' });
+    this.topEl = h('div', { class: 'hud-top' }, this.lanternEl, stages, this.areaEl);
 
     // ── run loot
     this.lootGold = h('span', { class: 'rl-val', text: '0' });
@@ -147,21 +154,30 @@ export class BattleHud {
       on: { click: () => this.onRetreatClick() },
     });
 
-    const strip = h('div', { class: 'hud-strip' }, this.lanternEl, stages, runLoot, this.retreatBtn);
+    this.strip = h('div', { class: 'hud-strip' }, this.topEl, runLoot, this.retreatBtn);
 
     // ── main row
     this.partyEl = h('div', { class: 'party' });
     this.skillsEl = h('div', { class: 'skills' });
     this.odVal = h('span', { class: 'od-val', text: '0%' });
+    let odHeld = () => false;
     this.odBtn = h(
       'button',
       {
         class: 'overdrive',
         on: {
-          click: () => this.host.activateOverdrive(),
-          pointerenter: () => this.showOverdriveHint(),
-          pointerleave: () => this.hideHint(),
-          focus: () => this.showOverdriveHint(),
+          click: () => {
+            if (!odHeld()) this.host.activateOverdrive();
+          },
+          pointerenter: (e: PointerEvent) => {
+            if (e.pointerType !== 'touch') this.showOverdriveHint();
+          },
+          pointerleave: (e: PointerEvent) => {
+            if (e.pointerType !== 'touch') this.hideHint();
+          },
+          focus: (e: Event) => {
+            if ((e.currentTarget as HTMLElement).matches(':focus-visible')) this.showOverdriveHint();
+          },
           blur: () => this.hideHint(),
         },
       },
@@ -169,6 +185,7 @@ export class BattleHud {
       h('span', { class: 'od-core' }, h('span', { class: 'od-label', text: 'OVER\nDRIVE' }), this.odVal),
       h('span', { class: 'key-badge od-key', text: 'Space' }),
     );
+    odHeld = touchHold(this.odBtn, () => this.showOverdriveHint(), () => this.hideHint());
     this.odWrap = h('div', { class: 'od-wrap hidden' }, this.odBtn);
 
     for (const hero of HERO_ORDER) this.slots[hero] = this.makeSlot(hero);
@@ -176,7 +193,15 @@ export class BattleHud {
     // While fighting, skills explain themselves in one line over the floor, not in a tooltip over the field.
     this.hint = h('div', { class: 'skill-hint', attrs: { 'aria-hidden': 'true' } });
     // Other HUD tooltips wait a moment, so a mouse passing by does not cover the field.
-    this.el = h('section', { class: 'hud', attrs: { 'aria-label': 'バトルHUD' }, dataset: { tipDelay: '450' } }, strip, h('div', { class: 'hud-main' }, this.partyEl, this.skillsEl, this.odWrap), this.hint);
+    this.el = h('section', { class: 'hud', attrs: { 'aria-label': 'バトルHUD' }, dataset: { tipDelay: '450' } }, this.strip, h('div', { class: 'hud-main' }, this.partyEl, this.skillsEl, this.odWrap), this.hint);
+  }
+
+  /** Lantern and stage progress live in the HUD's strip, or (phones) in `slot` above the stage. */
+  dock(slot: HTMLElement | null): void {
+    const parent = slot ?? this.strip;
+    if (this.topEl.parentElement === parent) return;
+    if (slot) slot.appendChild(this.topEl);
+    else this.strip.prepend(this.topEl);
   }
 
   // ─────────────────────────── public ───────────────────────────
@@ -240,13 +265,13 @@ export class BattleHud {
     const b = this.b;
     if (!b || !b.party.includes(hero)) return;
     const sk = HEROES[hero].skill, cd = b.skills[hero].maxCooldown;
-    this.showHint(anchor, `${sk.name} [${sk.key}]`, `CD ${cd.toFixed(cd % 1 ? 1 : 0)}秒`, 'PERFECT', perfectShort(hero));
+    this.showHint(anchor, isTouch() ? sk.name : `${sk.name} [${sk.key}]`, `CD ${cd.toFixed(cd % 1 ? 1 : 0)}秒`, 'PERFECT', perfectShort(hero));
   }
 
   private showOverdriveHint(): void {
     const b = this.b;
     if (!b) return;
-    this.showHint(this.odBtn, 'Overdrive [Space]', `${+b.overdriveMax.toFixed(1)}秒間`, '効果', '攻撃速度×2・CD回復×2・与ダメ+50%');
+    this.showHint(this.odBtn, isTouch() ? 'Overdrive' : 'Overdrive [Space]',`${+b.overdriveMax.toFixed(1)}秒間`, '効果', '攻撃速度×2・CD回復×2・与ダメ+50%');
   }
 
   /** Name, a short fact and a tagged condition, centred over `anchor` just above the HUD (on the floor). */
@@ -392,16 +417,27 @@ export class BattleHud {
     });
     let btn: HTMLButtonElement;
     if (recruited) {
+      // Mouse: the hint follows the pointer. Keyboard: focus. Finger: hold the button (that press does not cast).
+      let wasHeld = () => false;
       btn = h(
         'button',
         {
           class: 'skill',
           attrs: { 'aria-label': `${sk.name}（${sk.key}）PERFECT：${sk.perfect}` },
           on: {
-            click: () => this.host.castSkill(hero),
-            pointerenter: (e: Event) => this.showSkillHint(hero, e.currentTarget as HTMLElement),
-            pointerleave: () => this.hideHint(),
-            focus: (e: Event) => this.showSkillHint(hero, e.currentTarget as HTMLElement),
+            click: () => {
+              if (!wasHeld()) this.host.castSkill(hero);
+            },
+            pointerenter: (e: PointerEvent) => {
+              if (e.pointerType !== 'touch') this.showSkillHint(hero, e.currentTarget as HTMLElement);
+            },
+            pointerleave: (e: PointerEvent) => {
+              if (e.pointerType !== 'touch') this.hideHint();
+            },
+            focus: (e: Event) => {
+              const el = e.currentTarget as HTMLElement;
+              if (el.matches(':focus-visible')) this.showSkillHint(hero, el);
+            },
             blur: () => this.hideHint(),
           },
         },
@@ -412,6 +448,8 @@ export class BattleHud {
         h('span', { class: 'key-badge skill-key', text: sk.key }),
         h('span', { class: 'skill-perfect', text: 'PERFECT!' }),
       );
+      const skillBtn = btn;
+      wasHeld = touchHold(skillBtn, () => this.showSkillHint(hero, skillBtn), () => this.hideHint());
     } else {
       btn = h(
         'button',
@@ -500,6 +538,7 @@ export class BattleHud {
     if (sig !== this.pipSig) {
       const first = this.pipSig === '';
       this.pipSig = sig;
+      setText(this.areaEl, b.area.name);
       if (first || this.pips.length !== 10) this.buildPips();
       for (let i = 0; i < 10; i++) {
         const p = this.pips[i];

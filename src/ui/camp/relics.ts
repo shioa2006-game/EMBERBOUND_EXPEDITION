@@ -4,6 +4,7 @@ import { AREA_ORDER, type RelicDef } from '../../core/types.ts';
 import { AREAS } from '../../data/areas.ts';
 import { RELIC_LIST, RELICS } from '../../data/relics.ts';
 import type { IconKey } from '../../render/sprites/index.ts';
+import { tapWord } from '../dom.ts';
 import { clear, fmt, h, icon } from './dom.ts';
 import type { CampHost, TabView } from './host.ts';
 import { burst, centerIn, floatText, shake } from './juice.ts';
@@ -82,7 +83,7 @@ export class RelicsTab implements TabView {
             {
               class: 'camp-slot is-filled',
               attrs: { type: 'button' },
-              data: { relic: r.id, tip: `${r.name}|${r.desc}\nクリックで外す` },
+              data: { relic: r.id, tip: `${r.name}|${r.desc}\n${tapWord()}で外す` },
               on: { click: () => this.unequip(r.id) },
             },
             relicIcon(r, 48),

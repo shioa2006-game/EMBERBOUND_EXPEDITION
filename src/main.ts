@@ -5,6 +5,7 @@ import './styles/hud.css';
 import './styles/screens.css';
 import './styles/camp.css';
 import './styles/storybook.css';
+import './styles/phone.css';
 import { App } from './ui/app.ts';
 
 function boot(): void {

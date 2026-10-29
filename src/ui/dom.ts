@@ -206,6 +206,62 @@ export function countUp(el: Element, from: number, to: number, ms: number, forma
   });
 }
 
+// ─────────────────────────── touch ───────────────────────────
+
+/** Phones and tablets: no hover, a finger instead of a mouse (phone.css uses the same query). */
+export function isTouch(): boolean {
+  return typeof matchMedia === 'function' && matchMedia('(hover: none) and (pointer: coarse)').matches;
+}
+
+/** The verb for a press in help texts: タップ on touch screens, クリック with a mouse. */
+export function tapWord(): string {
+  return isTouch() ? 'タップ' : 'クリック';
+}
+
+/** How long a finger rests on something before it counts as "hold to read" instead of a tap. */
+const HOLD_MS = 420;
+/** A finger that slides further than this is scrolling, not holding. */
+const HOLD_SLOP = 12;
+
+/**
+ * Touch only: `onHold` once a finger has rested on `el` for a moment, `onRelease` when it lifts.
+ * The returned check says (once) whether the press that just ended was such a hold, so its click can be ignored.
+ */
+export function touchHold(el: HTMLElement, onHold: () => void, onRelease: () => void): () => boolean {
+  let timer = 0;
+  let held = false;
+  let press: { x: number; y: number; id: number } | null = null;
+  const end = (e: PointerEvent) => {
+    if (!press || e.pointerId !== press.id) return;
+    window.clearTimeout(timer);
+    press = null;
+    if (held) onRelease();
+  };
+  el.addEventListener('pointerdown', (e) => {
+    held = false;
+    if (e.pointerType !== 'touch') return;
+    press = { x: e.clientX, y: e.clientY, id: e.pointerId };
+    window.clearTimeout(timer);
+    timer = window.setTimeout(() => {
+      held = true;
+      onHold();
+    }, HOLD_MS);
+  });
+  el.addEventListener('pointermove', (e) => {
+    if (press && !held && e.pointerId === press.id && Math.hypot(e.clientX - press.x, e.clientY - press.y) > HOLD_SLOP) window.clearTimeout(timer);
+  });
+  el.addEventListener('pointerup', end);
+  el.addEventListener('pointercancel', end);
+  el.addEventListener('contextmenu', (e) => {
+    if (press || held) e.preventDefault();
+  });
+  return () => {
+    const was = held;
+    held = false;
+    return was;
+  };
+}
+
 // ─────────────────────────── tooltips ───────────────────────────
 
 let tipEl: HTMLElement | null = null;
@@ -252,6 +308,7 @@ export function installTooltips(root: HTMLElement): void {
     tipEl?.classList.remove('show');
   };
   document.addEventListener('pointerover', (e) => {
+    if (e.pointerType === 'touch') return; // fingers: see below
     const t = (e.target as HTMLElement | null)?.closest?.('[data-tip]') as HTMLElement | null;
     if (!t) {
       if (tipOwner || waiting) hide();
@@ -275,7 +332,64 @@ export function installTooltips(root: HTMLElement): void {
   });
   document.addEventListener('pointerdown', hide, true);
   window.addEventListener('blur', hide);
+
+  // Touch screens have no hover. Holding a finger on an element shows its tooltip until the finger lifts
+  // (and that press does nothing else); a tap on something passive (a gauge, a label) shows it until the next tap.
+  let press: { t: HTMLElement; x: number; y: number; id: number } | null = null;
+  let held = false;
+  let swallow = false;
+  document.addEventListener('pointerdown', (e) => {
+    swallow = false;
+    held = false;
+    press = null;
+    if (e.pointerType !== 'touch') return;
+    const t = (e.target as HTMLElement | null)?.closest?.('[data-tip]') as HTMLElement | null;
+    if (!t) return;
+    press = { t, x: e.clientX, y: e.clientY, id: e.pointerId };
+    timer = window.setTimeout(() => {
+      held = true;
+      if (t.isConnected) show(t);
+    }, HOLD_MS);
+  });
+  document.addEventListener('pointermove', (e) => {
+    if (!press || held || e.pointerId !== press.id) return;
+    if (Math.hypot(e.clientX - press.x, e.clientY - press.y) > HOLD_SLOP) {
+      window.clearTimeout(timer);
+      press = null;
+    }
+  });
+  const release = (e: PointerEvent) => {
+    if (!press || e.pointerId !== press.id) return;
+    const t = press.t;
+    press = null;
+    window.clearTimeout(timer);
+    if (held) {
+      held = false;
+      swallow = e.type === 'pointerup';
+      hide();
+    } else if (e.type === 'pointerup' && !t.closest(CONTROL) && t.isConnected) {
+      show(t);
+    }
+  };
+  document.addEventListener('pointerup', release);
+  document.addEventListener('pointercancel', release);
+  document.addEventListener(
+    'click',
+    (e) => {
+      if (!swallow) return;
+      swallow = false;
+      e.preventDefault();
+      e.stopPropagation();
+    },
+    true,
+  );
+  document.addEventListener('contextmenu', (e) => {
+    if (press || held) e.preventDefault();
+  });
 }
+
+/** Elements that act when tapped: on touch screens their tooltip needs a hold. */
+const CONTROL = 'button, a, input, select, textarea, label, summary, [role="button"], [role="tab"], [tabindex]:not([tabindex="-1"])';
 
 /** Re-read a tooltip that's currently showing (content changed). */
 export function hideTooltip(): void {
