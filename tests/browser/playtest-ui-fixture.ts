@@ -17,7 +17,7 @@ import { showResult } from '../../src/ui/result.ts';
 import { Renderer } from '../../src/render/renderer.ts';
 import { Battle } from '../../src/core/battle.ts';
 import { AREA_ORDER, type RunResult } from '../../src/core/types.ts';
-import { TREE } from '../../src/data/tree.ts';
+import { TREE, TREE_BY_ID } from '../../src/data/tree.ts';
 import { campSceneHeight, isPhoneLayout } from '../../src/ui/layout.ts';
 import { perfectShort, skillDescription } from '../../src/ui/skill-description.ts';
 import { makeSave } from '../helpers/saves.ts';
@@ -167,6 +167,31 @@ async function audit(){
       check(save.tree.shield_wall===3&&save.embers===0,'Purchase did not apply');
       check(document.querySelector('.camp-tree-tip')?.textContent?.includes('習得済み'),'Stale purchased tooltip');
       check(!document.querySelector('.camp-tree-tip')?.textContent?.includes('Ember'),'Maxed tooltip still has a price');
+      if(innerWidth<=600){
+        // Phones open the tree zoomed in; a tap beside a node's shape still picks it; picking never moves the tree.
+        // (Measured with the camp scene's fold transition settled: background frames may never finish it.)
+        const still=document.head.appendChild(document.createElement('style'));
+        still.textContent='*,*::before,*::after{animation:none!important;transition:none!important}';
+        const svg=document.querySelector('.camp-tree-svg')!;
+        const stage=document.querySelector('.camp-tree-stage')!.getBoundingClientRect();
+        const shapeOf=(id:string)=>svg.querySelector(`.camp-node[data-id="${id}"] .camp-node-shape`)!.getBoundingClientRect();
+        const inStage=(r:DOMRect,m:number)=>r.left>=stage.left+m&&r.right<=stage.right-m&&r.top>=stage.top+m&&r.bottom<=stage.bottom-m;
+        const shown=[...svg.querySelectorAll<SVGGElement>('.camp-node')].filter(g=>inStage(g.querySelector('.camp-node-shape')!.getBoundingClientRect(),0));
+        measurements.treeNodes={visible:shown.length,minWidth:Math.min(...shown.map(g=>g.querySelector('.camp-node-shape')!.getBoundingClientRect().width))};
+        check(shown.length>=6&&shown.every(g=>g.querySelector('.camp-node-shape')!.getBoundingClientRect().width>=24),'Tree nodes too small to tap');
+        const ids=shown.map(g=>g.dataset.id!).filter(id=>inStage(shapeOf(id),50)).slice(0,4);
+        const ref=shapeOf(ids[0]);
+        for(const [i,id] of ids.entries()){
+          const r=shapeOf(id),x=r.right+8,y=r.top+r.height/2,t=document.elementFromPoint(x,y)!;
+          const o={pointerId:900+i,pointerType:'touch',clientX:x,clientY:y,bubbles:true,isPrimary:true,button:0};
+          t.dispatchEvent(new PointerEvent('pointerdown',o));t.dispatchEvent(new PointerEvent('pointerup',o));
+          t.dispatchEvent(new MouseEvent('click',{bubbles:true,clientX:x,clientY:y}));await delay(30);
+          check(document.querySelector('.camp-td-name')?.textContent===TREE_BY_ID[id].name,`Tap beside ${id} did not select it`);
+          const now=shapeOf(ids[0]);
+          check(Math.abs(now.top-ref.top)<1&&Math.abs(now.left-ref.left)<1,'Tree moved when the selection changed');
+        }
+        still.remove();
+      }
     }
     if(scenario==='review-swap'){
       const before=JSON.stringify(save.relicsEquipped);

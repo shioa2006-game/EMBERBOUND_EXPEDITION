@@ -5,10 +5,15 @@ import { HERO_ORDER, type HeroId, type SaveData, type TreeBranch, type TreeNodeD
 import { HEROES } from '../../data/heroes.ts';
 import { SYNERGY_IDS, TREE, TREE_BY_ID } from '../../data/tree.ts';
 import { isTouch, tapWord } from '../dom.ts';
+import { isPhoneLayout } from '../layout.ts';
 import { append, clear, flashClass, fmt, h, icon, keycap, s, setAttr, setText } from './dom.ts';
 import { BRANCH_LABEL, BUILD_COLOR, HERO_COLOR, KIND_LABEL, nodeColor, type CampHost, type TabView } from './host.ts';
 
 const MIN_W = 380;
+/** Phones open the tree this wide (about 2× the whole-tree view), so nodes are fingertip-sized and labels readable. */
+const PHONE_VIEW_W = 520;
+/** How far (screen px) from a node's edge a tap still picks it. */
+const TOUCH_REACH = 24;
 const LINE_H = 17;
 const LABEL_ASCENT = 13; // baseline offset from the top of a 16px label line
 const CHAR_W = 8.4; // approx. advance of a Latin glyph in a 16px label
@@ -355,6 +360,8 @@ export class TreeTab implements TabView {
   private suppressClick = false;
   private lastHoverSfx = 0;
   private lastPointer = '';
+  /** The current touch panned or pinched, so lifting it is not a tap. */
+  private touchMoved = false;
   /** Fingers on the stage, for two-finger zoom. */
   private touches = new Map<number, { x: number; y: number }>();
   private pinchDist = 0;
@@ -432,6 +439,8 @@ export class TreeTab implements TabView {
       this.selected = goal ? goal.node.id : 'core';
       this.update();
     }
+    // Phones: the whole tree makes fingertip-sized targets impossible; open zoomed in on the selection.
+    if (isPhoneLayout() && this.view.w >= FIT.w - 0.5) this.focusOn(this.selected, PHONE_VIEW_W, false);
     this.host.hint(
       this.hints,
       'campTreeHelp',
@@ -701,10 +710,15 @@ export class TreeTab implements TabView {
     );
     g.appendChild(cost);
 
-    g.addEventListener('pointerenter', () => this.hover(def.id));
-    g.addEventListener('pointerleave', () => this.hover(null));
+    // A finger resting on a node is not a hover: it would rewrite the details mid-tap (see the stage's click).
+    g.addEventListener('pointerenter', (e) => {
+      if (e.pointerType !== 'touch') this.hover(def.id);
+    });
+    g.addEventListener('pointerleave', (e) => {
+      if (e.pointerType !== 'touch') this.hover(null);
+    });
     g.addEventListener('click', () => {
-      if (this.suppressClick) return;
+      if (this.suppressClick || this.lastPointer === 'touch') return;
       this.select(def.id);
     });
     g.addEventListener('dblclick', (e) => {
@@ -828,6 +842,7 @@ export class TreeTab implements TabView {
         on: {
           click: () => {
             this.select(n.id);
+            this.reveal(n.id);
             const ne = this.nodes.get(n.id);
             if (ne) flashClass(ne.g, 'is-unlocked', 1400);
           },
@@ -1001,7 +1016,9 @@ export class TreeTab implements TabView {
     this.hovered = null;
     for (const ne of this.nodes.values()) ne.g.classList.toggle('is-selected', ne.def.id === id);
     this.renderDetail();
-    if (TREE_BY_ID[id]) this.showTip(id);
+    // fingers read the details under the tree; a bubble would stay over the nodes (nothing hovers away)
+    if (this.lastPointer === 'touch') this.tip.classList.remove('is-on');
+    else if (TREE_BY_ID[id]) this.showTip(id);
   }
 
   private buy(id: string, fromShortcut: boolean): void {
@@ -1083,6 +1100,7 @@ export class TreeTab implements TabView {
     svg.addEventListener('pointerdown', (e) => {
       this.lastPointer = e.pointerType;
       if (e.pointerType === 'touch') {
+        if (this.touches.size === 0) this.touchMoved = false;
         this.touches.set(e.pointerId, { x: e.clientX, y: e.clientY });
         if (this.touches.size === 2) {
           // a second finger turns the drag into a pinch
@@ -1132,6 +1150,7 @@ export class TreeTab implements TabView {
       if (this.touches.delete(e.pointerId) && this.pinchDist > 0) {
         // the fingers of a pinch never select a node when they lift
         if (this.touches.size === 0) this.pinchDist = 0;
+        this.touchMoved = true;
         this.suppressClick = true;
         window.setTimeout(() => (this.suppressClick = false), 0);
         return;
@@ -1139,6 +1158,7 @@ export class TreeTab implements TabView {
       const d = this.drag;
       if (!d || d.id !== e.pointerId) return;
       if (d.moved) {
+        if (e.pointerType === 'touch') this.touchMoved = true;
         this.suppressClick = true;
         window.setTimeout(() => (this.suppressClick = false), 0);
         this.stage.classList.remove('is-dragging');
@@ -1147,10 +1167,57 @@ export class TreeTab implements TabView {
     };
     svg.addEventListener('pointerup', end);
     svg.addEventListener('pointercancel', end);
+    // Fingers: a tap picks the node under it, or the nearest one within a fingertip, so the gaps
+    // between the small shapes do not swallow taps. (Mouse clicks go to the node itself.)
+    svg.addEventListener('click', (e) => {
+      if (this.lastPointer !== 'touch' || this.touchMoved) return;
+      const id = this.nodeNear(e.clientX, e.clientY);
+      if (id) this.select(id);
+    });
     svg.addEventListener('dblclick', (e) => {
       if ((e.target as Element).closest('.camp-node')) return;
       this.fit();
     });
+  }
+
+  /** The node a tap at a screen point meant: the one whose shape is closest, if within TOUCH_REACH. */
+  private nodeNear(cx: number, cy: number): string | null {
+    const p = this.svgPoint(cx, cy);
+    let best: string | null = null;
+    let bestGap = TOUCH_REACH * this.unitsPerPx();
+    for (const ne of this.nodes.values()) {
+      const gap = Math.hypot(ne.def.x - p.x, ne.def.y - p.y) - ne.r;
+      if (gap < bestGap) {
+        bestGap = gap;
+        best = ne.def.id;
+      }
+    }
+    return best;
+  }
+
+  /** Show `id` in the middle of a view `w` units wide. */
+  private focusOn(id: string, w: number, animate: boolean): void {
+    const n = TREE_BY_ID[id];
+    if (!n) return;
+    const h = (w * FIT.h) / FIT.w;
+    const target = { x: n.x - w / 2, y: n.y - h / 2, w, h };
+    if (animate) this.animateTo(target);
+    else {
+      this.view = target;
+      this.clampView();
+      this.applyView();
+    }
+    this.stage.classList.toggle('is-zoomed', w < FIT.w - 0.5);
+  }
+
+  /** While zoomed in, pan so a node picked from outside the tree (the next-goal button) is in view. */
+  private reveal(id: string): void {
+    const n = TREE_BY_ID[id];
+    const v = this.view;
+    if (!n || v.w >= FIT.w - 0.5) return;
+    const m = v.w * 0.12;
+    if (n.x > v.x + m && n.x < v.x + v.w - m && n.y > v.y + m && n.y < v.y + v.h - m) return;
+    this.focusOn(id, v.w, true);
   }
 
   private fingerSpan(): number {
