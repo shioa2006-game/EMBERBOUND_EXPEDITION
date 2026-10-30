@@ -253,3 +253,24 @@ tried and reverted; human-like jitter in the bots handles the phase-locking issu
 * PERFECT refund 30% → **40%** of the cooldown.
 * Coilscale *Venom Spit* is now an **orange, interruptible 1.6 s windup** (was instant).
 * Relic tooltips read `RELICS[id].desc` (updated) — any hard-coded relic numbers or costs elsewhere must follow.
+
+## 7. Playtest follow-up (2026-10-30)
+
+Two human playthroughs (one normal ending, one true ending; slow input of 10–25 s per action) both spent
+13 runs in Glimmerdeep, the longest stretch of either run, with the same story: the Arcanist — the only
+magic damage against armor and wards — died early and the rest of the run went nowhere, and runs stuck at
+stage 4–5 paid ~0 embers. Measured per missed interrupt, at the level players meet each strike:
+
+| strike | target | before | after |
+|---|---|---|---|
+| Root Crush (Gnarlwood, Lv 9) | front | 96% of max HP | — |
+| Tidebreaker / Venom Spit (Ruins, Lv 12 / 19) | front / back | 84% / 60% | — |
+| **Prism Beam** (Prism Sentinel, Lv 24) | back | **411%** | **154%** (92% at Lv 25, 67% at Lv 28) |
+| **Prismatic Beam** (Geode Colossus, Lv 31) | back | **280%** | **124%** |
+
+Glimmer was the one place where a missed interrupt deleted a backliner outright before the Oracle (Barrier)
+joins. Prism Beam mult **8 → 3**, Prismatic Beam **9 → 4**: past the Lv 25 milestone the Arcanist survives a
+missed beam at full HP, while an interrupt still earns BREAK and stagger. Pacing is unchanged (6 seeds,
+casual first clear 40:15 → 40:52, true ending ≈ 54–56 min, all within seed noise); the casual's first Geode
+attempt wins 7/30 instead of 3/30 and its deaths move to Shard Storm (the purple nova). Global enemy HP and
+rewards were deliberately left alone: in the playtest, more total embers did not shorten Glimmer.

@@ -74,7 +74,7 @@ const list: EnemyDef[] = [
   },
   {
     id: 'prism_sentinel', name: 'Prism Sentinel', sprite: 'prism_sentinel', rank: 'elite', size: 'large', hp: 5.5, dmg: 1.3, gold: 5, interval: 2.0, attack: 'magic', target: 'random', armor: 0.5, ward: 0.5,
-    abilities: [{ id: 'prismBeam', name: 'Prism Beam', cooldown: 10, initialDelay: 3, windup: 2.2, interruptible: true, effect: { kind: 'strike', mult: 8, target: 'backline' } }],
+    abilities: [{ id: 'prismBeam', name: 'Prism Beam', cooldown: 10, initialDelay: 3, windup: 2.2, interruptible: true, effect: { kind: 'strike', mult: 3, target: 'backline' } }],
     desc: 'エリート。装甲とシールドを持つ。',
   },
   {
@@ -82,7 +82,7 @@ const list: EnemyDef[] = [
     phases: [0.5], phaseText: ['結晶が砕け、Crystal Miteが溢れ出す！'], opener: 'miteSwarm',
     abilities: [
       { id: 'carapace', name: 'Crystal Carapace', cooldown: 20, initialDelay: 16, windup: 1.5, interruptible: false, effect: { kind: 'ward', amount: 0.5 } },
-      { id: 'prismaticBeam', name: 'Prismatic Beam', cooldown: 10, initialDelay: 4.5, windup: 2.4, interruptible: true, effect: { kind: 'strike', mult: 9, target: 'backline' } },
+      { id: 'prismaticBeam', name: 'Prismatic Beam', cooldown: 10, initialDelay: 4.5, windup: 2.4, interruptible: true, effect: { kind: 'strike', mult: 4, target: 'backline' } },
       { id: 'shardStorm', name: 'Shard Storm', cooldown: 14, initialDelay: 9, windup: 2.5, interruptible: false, effect: { kind: 'nova', mult: 1.4, wardScale: 2 } },
       { id: 'miteSwarm', name: 'Mite Swarm', cooldown: 14, initialDelay: 1, windup: 0.5, interruptible: false, minPhase: 1, effect: { kind: 'summon', enemy: 'crystal_mite', count: 2, max: 4 } },
     ],
