@@ -17,11 +17,11 @@ describe('current skill descriptions agree with combat', () => {
     const h = new Harness({ save: makeSave({ heroes: 'all', prestige: 1,
       nodes: ['grace', 'hallowed_ground', 'ascendant_oracle', 'divine_echo'], relics: ['soulbound_chalice', 'bastion_heart'] }), areaId: 'ashwood' });
     h.toFight(); h.b.routed = false; h.pacifyEnemies(); h.holdFire();
-    const g = h.hero('guardian'); g.hp = 1; g.barrier = 0; g.barrierTime = 0; h.clearLog();
+    const g = h.hero('guardian'); g.hp = g.maxHp * 0.5; g.barrier = 0; g.barrierTime = 0; h.clearLog();
     expect(h.b.cast('oracle')).toBe(true); h.flush();
     const desc = skillDescription('oracle', h.b.mods);
     expect(desc).toContain('最大HP56.88%のBarrier（24秒）');
-    expect(desc).toContain('最大HP131.25%分の回復');
+    expect(desc).toContain('最大HP98.44%分の回復');
     expect(h.of('barrier').find(e => e.dst === g.id)!.amount / g.maxHp).toBeCloseTo(.56875, 6);
     expect(desc).toContain('余剰回復はBarrierへ変換（最大HP80%まで）');
     expect(g.barrier / g.maxHp).toBeCloseTo(.8, 6);

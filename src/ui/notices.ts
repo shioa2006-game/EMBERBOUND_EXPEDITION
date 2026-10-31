@@ -3,7 +3,7 @@
 import { AREAS } from '../data/areas.ts';
 import { HEROES } from '../data/heroes.ts';
 import { gearTier } from '../core/balance.ts';
-import { computeMods } from '../core/mods.ts';
+import { activeVows, computeMods } from '../core/mods.ts';
 import { AREA_ORDER, type AreaId, type HeroId, type SaveData } from '../core/types.ts';
 import type { IAudio, MusicTrack, SfxName } from '../audio/api.ts';
 import { getStoryFrameIndex } from '../render/storybook/characters.ts';
@@ -293,6 +293,7 @@ export function trueEndingCard(save: SaveData): NoticeCard {
     ['最大ダメージ', fmt(s.bestHit)],
     ['Rekindle', `${save.prestige}回`],
   ];
+  if (s.vowsKept > 0) rows.push(['守り通した誓約', `${fmt(s.vowsKept)}回`]);
   const credits: [string, string][] = [
     ['EMBERBOUND EXPEDITION', ''],
     ['ゲームデザイン・プログラム', 'Emberbound Team'],
@@ -337,6 +338,7 @@ export function trueEndingCard(save: SaveData): NoticeCard {
 
 export function rekindleCard(shards: number, save: SaveData): NoticeCard {
   const mods = computeMods(save);
+  const vows = activeVows(save);
   const unlocks: [string, string][] = [
     ['Relic', `Relic Shardsで購入し装備（スロット ${mods.relicSlots}）`],
     ['Overdrive', 'ゲージ満タンで[Space]：6秒間の超強化'],
@@ -358,6 +360,9 @@ export function rekindleCard(shards: number, save: SaveData): NoticeCard {
         h('div', { class: 'nt-flame', attrs: { 'aria-hidden': 'true' } }, h('span'), h('span'), h('span')),
         h('div', { class: 'nt-gain' }, icon('shard', 3), h('span', { text: `+${fmt(shards)} Relic Shards` })),
         h('div', { class: 'nt-unlocks' }, ...unlocks.map(([k, v]) => h('div', { class: 'nt-unlock-row' }, h('b', { text: k }), h('span', { text: v })))),
+        vows.length
+          ? h('div', { class: 'nt-vows' }, h('b', { text: 'この周回の誓約' }), ...vows.map((v) => h('span', { class: 'nt-vow', text: `${v.name}：${v.desc}` })))
+          : null,
       ),
   };
 }

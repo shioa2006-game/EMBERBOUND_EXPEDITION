@@ -1996,6 +1996,116 @@
   animation: camp-armed 0.5s ease-in-out infinite alternate;
 }
 
+/* vows for the next cycle */
+.camp-rk-vows {
+  margin: 12px 18px 0;
+  padding: 12px 12px 14px;
+  border: 2px solid color-mix(in srgb, var(--gold) 40%, var(--line));
+  border-top-width: 5px;
+  border-radius: 6px;
+  background: linear-gradient(180deg, rgba(233, 198, 123, 0.08), rgba(0, 0, 0, 0.2));
+}
+.camp-rk-vows h3 {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  color: var(--gold);
+  font-family: var(--font-num);
+  font-size: var(--fs-l);
+  font-weight: normal;
+  letter-spacing: 0.14em;
+}
+.camp-rk-vows h3 small {
+  color: var(--text-dim);
+  font-family: var(--font-ui);
+  font-size: var(--fs-s);
+  letter-spacing: 0;
+}
+.camp-rk-vows-intro {
+  margin: 4px 0 10px;
+  color: var(--text-dim);
+  font-size: var(--fs-s);
+}
+.camp-rk-vow-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(210px, 100%), 1fr));
+  gap: 8px;
+}
+.camp-rk-vow {
+  display: grid;
+  align-content: start;
+  gap: 4px;
+  min-width: 0;
+  padding: 8px 10px;
+  border: 2px solid var(--line);
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.28);
+  color: var(--text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.12s, background 0.12s, transform 0.12s;
+}
+.camp-rk-vow:hover {
+  border-color: var(--line-hi);
+  transform: translateY(-1px);
+}
+.camp-rk-vow:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 2px;
+}
+.camp-rk-vow.is-on {
+  border-color: var(--gold);
+  background: linear-gradient(180deg, rgba(233, 198, 123, 0.2), rgba(0, 0, 0, 0.3));
+  box-shadow: 0 0 16px rgba(233, 198, 123, 0.25);
+}
+.camp-rk-vow.is-off {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+.camp-rk-vow-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.camp-rk-vow-head b {
+  flex: 1;
+  min-width: 0;
+  font-weight: normal;
+}
+.camp-rk-vow.is-on .camp-rk-vow-head b {
+  color: var(--gold);
+}
+.camp-rk-vow.is-on .camp-rk-vow-head b::before {
+  content: '✓ ';
+}
+.camp-rk-vow-reward {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  font-family: var(--font-num);
+  white-space: nowrap;
+}
+.camp-rk-vow-desc {
+  font-size: var(--fs-s);
+}
+.camp-rk-vow-hint,
+.camp-rk-vow-best {
+  color: var(--text-dim);
+  font-size: var(--fs-xs);
+}
+.camp-rk-vow-best {
+  color: var(--text-faint);
+}
+.camp-rk-vow-sum {
+  margin-top: 10px;
+  font-size: var(--fs-s);
+}
+.camp-rk-vow-sum b {
+  font-weight: normal;
+}
+
 /* ───────────────────────── party ───────────────────────── */
 
 .camp-party-head {
@@ -2093,6 +2203,36 @@
   font-family: var(--font-num);
   font-size: var(--fs-s);
   box-shadow: var(--shadow);
+}
+
+.camp-hero-bench {
+  display: none;
+  position: absolute;
+  z-index: 1;
+  top: -10px;
+  left: 12px;
+  padding: 1px 10px;
+  border: 1px solid rgba(233, 198, 123, 0.6);
+  border-radius: 999px;
+  background: #1a1410;
+  color: var(--gold);
+  font-size: var(--fs-xs);
+  box-shadow: var(--shadow);
+}
+.camp-hero.is-benched .camp-hero-bench {
+  display: block;
+}
+.camp-hero.is-benched .camp-portrait {
+  filter: grayscale(0.8) brightness(0.7);
+}
+.camp-side-hero.is-benched {
+  opacity: 0.55;
+}
+.camp-side-bench {
+  margin-left: 6px;
+  color: var(--gold);
+  font-family: var(--font-ui);
+  font-size: var(--fs-xs);
 }
 
 .camp-hero.is-new .camp-hero-ribbon {
@@ -3482,6 +3622,70 @@
   align-items: center;
   flex-wrap: wrap;
   gap: 6px;
+}
+
+/* vows binding this cycle */
+.camp-vow-box {
+  display: grid;
+  gap: 6px;
+  margin-bottom: 12px;
+  padding: 6px 12px;
+  border: 2px solid rgba(233, 198, 123, 0.35);
+  border-radius: 6px;
+  background: rgba(233, 198, 123, 0.05);
+}
+.camp-vow-box.is-empty {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+  border-color: var(--line);
+  background: transparent;
+  font-size: var(--fs-xs);
+}
+.camp-vow-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--gold);
+  font-size: var(--fs-s);
+}
+.camp-vow {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px 10px;
+}
+.camp-vow-name {
+  font-weight: normal;
+  color: var(--gold);
+}
+.camp-vow-desc {
+  flex: 1 1 200px;
+  min-width: 0;
+  color: var(--text-dim);
+  font-size: var(--fs-s);
+}
+.camp-vow-drop {
+  min-height: 30px;
+  padding: 2px 12px;
+}
+.camp-vow-confirm {
+  width: 520px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.camp-vow-confirm > .dialog-scroll {
+  padding: 24px;
+}
+.camp-vow-confirm h2 {
+  margin-bottom: 12px;
+}
+.camp-vow-confirm > .dialog-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
 }
 
 .camp-relic-grid {

@@ -1,6 +1,8 @@
-// レリック / Relics tab: buy relics with Relic Shards and equip them into the limited slots.
-import { bossShardsFor, buyRelic, equipRelic, relicSlots, swapRelic, unequipRelic } from '../../core/state.ts';
-import { AREA_ORDER, type RelicDef } from '../../core/types.ts';
+// レリック / Relics tab: buy relics with Relic Shards and equip them into the limited slots,
+// and see (or give up) the vows binding this cycle.
+import { activeVows } from '../../core/mods.ts';
+import { abandonVow, bossShardsFor, buyRelic, equipRelic, relicSlots, swapRelic, unequipRelic } from '../../core/state.ts';
+import { AREA_ORDER, type RelicDef, type VowDef } from '../../core/types.ts';
 import { AREAS } from '../../data/areas.ts';
 import { RELIC_LIST, RELICS } from '../../data/relics.ts';
 import type { IconKey } from '../../render/sprites/index.ts';
@@ -37,6 +39,7 @@ export class RelicsTab implements TabView {
   private slotsLabel: HTMLElement;
   private slotNote: HTMLElement;
   private info: HTMLElement;
+  private vowBox: HTMLElement;
   private grid: HTMLElement;
 
   constructor(host: CampHost) {
@@ -47,6 +50,7 @@ export class RelicsTab implements TabView {
     this.slotsEl = h('div', 'camp-slots');
     this.slotNote = h('span', 'camp-slot-note');
     this.info = h('div', 'camp-relic-info');
+    this.vowBox = h('div', 'camp-vow-box');
     this.grid = h('div', 'camp-relic-grid');
     this.el = h(
       'div',
@@ -59,6 +63,7 @@ export class RelicsTab implements TabView {
         h('div', 'camp-slot-box', h('div', 'camp-slot-title', h('span', 'camp-label', '装備枠 ', this.slotsLabel), this.slotNote), this.slotsEl),
       ),
       this.info,
+      this.vowBox,
       this.grid,
     );
   }
@@ -107,6 +112,7 @@ export class RelicsTab implements TabView {
         null,
         h('li', null, h('b', null, 'Rekindle（転生）'), 'するたびにまとめて獲得'),
         h('li', null, '各サイクルで、各エリアのボスを', h('b', null, '初めて'), '倒したとき'),
+        h('li', null, h('b', null, '誓約'), 'を守り通してRekindleしたとき'),
       ),
       remain.length
         ? h(
@@ -117,6 +123,26 @@ export class RelicsTab implements TabView {
           )
         : h('div', 'camp-relic-remain camp-dim', 'このサイクルのボスShardはすべて獲得済み'),
     );
+
+    // vows of this cycle
+    clear(this.vowBox);
+    const vows = activeVows(save);
+    this.vowBox.classList.toggle('is-empty', vows.length === 0);
+    this.vowBox.appendChild(h('div', 'camp-vow-title', icon('crown', 20), 'このサイクルの誓約'));
+    if (!vows.length) this.vowBox.appendChild(h('span', 'camp-dim', 'なし（次のRekindleで立てられる）'));
+    for (const v of vows) {
+      this.vowBox.appendChild(
+        h(
+          'div',
+          { class: 'camp-vow', data: { vow: v.id, tip: `${v.name}|${v.desc}\n${v.hint}` } },
+          icon(v.icon as IconKey, 20),
+          h('b', 'camp-vow-name', v.name),
+          h('span', 'camp-vow-desc', v.desc),
+          h('span', 'camp-chip camp-chip--shard', `Rekindleで +${v.shards}`),
+          h('button', { class: 'camp-btn camp-btn--ghost camp-vow-drop', attrs: { type: 'button' }, on: { click: () => this.abandon(v) } }, '破棄'),
+        ),
+      );
+    }
 
     // cards
     clear(this.grid);
@@ -231,6 +257,26 @@ export class RelicsTab implements TabView {
     if (!unequipRelic(save, id)) return;
     this.host.commit();
     this.host.sfx('uiClick', { pitch: 0.85 });
+  }
+
+  /** Give up a vow (after a confirmation): the rule lifts at once, its Shards are lost. */
+  private abandon(v: VowDef): void {
+    const cancel = h('button', { class: 'camp-btn camp-btn--ghost', attrs: { type: 'button' } }, 'やめる');
+    const ok = h('button', { class: 'camp-btn camp-btn--danger', attrs: { type: 'button' } }, '破棄する');
+    const panel = h('div', { class: 'camp-modal camp-vow-confirm', attrs: { role: 'dialog', 'aria-modal': 'true', 'aria-label': '誓約を破棄する' } },
+      h('div', { class: 'dialog-scroll', attrs: { tabindex: '0' } },
+        h('h2', null, `${v.name}を破棄する？`),
+        h('p', null, `「${v.desc}」の縛りはすぐに解ける。このサイクルを守り通した報酬（Relic Shard +${v.shards}）はもらえなくなる。`)),
+      h('footer', 'dialog-footer', cancel, ok));
+    const close = this.host.openModal(panel);
+    cancel.addEventListener('click', close);
+    ok.addEventListener('click', () => {
+      close();
+      if (!abandonVow(this.host.save(), v.id)) return;
+      this.host.commit();
+      this.host.sfx('uiClick', { pitch: 0.7 });
+      this.host.ctx.toast(`${v.name}を破棄した`, 'info');
+    });
   }
 
   private swap(incoming: RelicDef): void {

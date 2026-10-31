@@ -1,7 +1,7 @@
 // Stage column beside the tabs (the party at a glance) and the departure control every tab shares:
 // at the right end of the tab row on wide windows, a bottom bar on narrow ones (layout in camp.css).
 import { BAL, gearTier, nextMilestone } from '../../core/balance.ts';
-import { heroLevelCost } from '../../core/state.ts';
+import { benchingVow, heroLevelCost } from '../../core/state.ts';
 import { HERO_ORDER, type AreaId, type HeroId } from '../../core/types.ts';
 import { AREAS } from '../../data/areas.ts';
 import { HEROES } from '../../data/heroes.ts';
@@ -99,9 +99,11 @@ export class CampSide {
         this.rows.appendChild(h('span', 'camp-side-hero is-locked', icon('lock', 16, 'camp-side-lock'), h('span', 'camp-side-name', '未加入の仲間')));
         continue;
       }
-      const ready = heroLevelCost(save, hero, 1, mods) <= save.gold;
+      // a hero a vow leaves at camp is shown dimmed and not nagged about
+      const benched = !!benchingVow(save, hero);
+      const ready = !benched && heroLevelCost(save, hero, 1, mods) <= save.gold;
       if (ready) upgradable++;
-      this.rows.appendChild(this.heroRow(hero, st.level, ready));
+      this.rows.appendChild(this.heroRow(hero, st.level, ready, benched));
     }
     setText(this.partyState, upgradable > 0 ? `${upgradable}人 強化できます` : '');
     this.party.classList.toggle('has-action', upgradable > 0);
@@ -119,7 +121,7 @@ export class CampSide {
     this.host.ctx.startRun(id);
   }
 
-  private heroRow(hero: HeroId, level: number, ready: boolean): HTMLElement {
+  private heroRow(hero: HeroId, level: number, ready: boolean, benched: boolean): HTMLElement {
     const tier = gearTier(level);
     const pips = h('span', 'camp-side-tier');
     for (let i = 0; i < BAL.milestones.length; i++) pips.appendChild(h('i', `camp-tier-pip${i < tier ? ' is-on' : ''}`));
@@ -129,9 +131,9 @@ export class CampSide {
     const pct = ms === null ? 100 : Math.max(2, Math.min(100, ((level - prev) / (ms - prev)) * 100));
     return h(
       'span',
-      { class: `camp-side-hero${ready ? ' is-ready' : ''}`, style: `--hc:${HERO_COLOR[hero]}` },
+      { class: `camp-side-hero${ready ? ' is-ready' : ''}${benched ? ' is-benched' : ''}`, style: `--hc:${HERO_COLOR[hero]}` },
       icon(`hero_${hero}` as IconKey, 32, 'camp-side-face'),
-      h('span', 'camp-side-name', HEROES[hero].name),
+      h('span', 'camp-side-name', HEROES[hero].name, benched ? h('small', 'camp-side-bench', '待機') : null),
       h('span', 'camp-side-lv camp-num', h('small', null, 'Lv'), String(level)),
       pips,
       h('span', { class: 'camp-side-ms', attrs: { 'aria-hidden': 'true' } }, h('i', { style: `width:${pct.toFixed(1)}%` })),

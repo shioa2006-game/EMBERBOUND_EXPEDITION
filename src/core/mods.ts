@@ -1,7 +1,14 @@
 import { BAL } from './balance.ts';
-import { HERO_ORDER, type HeroId, type Mods, type SaveData } from './types.ts';
+import { HERO_ORDER, type HeroId, type Mods, type SaveData, type VowDef } from './types.ts';
 import { TREE, TREE_BY_ID } from '../data/tree.ts';
 import { RELICS } from '../data/relics.ts';
+import { VOWS } from '../data/vows.ts';
+
+/** Vows binding the current cycle (taken at the last Rekindle; none before the first). */
+export function activeVows(save: SaveData): VowDef[] {
+  if (save.prestige < 1) return [];
+  return (save.vows ?? []).map((id) => VOWS[id]).filter((v): v is VowDef => !!v);
+}
 
 const per = (v: number): Record<HeroId, number> => ({ guardian: v, ranger: v, arcanist: v, oracle: v });
 
@@ -101,6 +108,15 @@ export function defaultMods(): Mods {
     phoenixAll: false,
     reflect: 0,
     waveBarrier: 0,
+    autoDmgMult: 1,
+    mirrorStrike: 0,
+    barrierDmgBonus: 0,
+    woundDmgBonus: 0,
+    fallDmgBonus: 0,
+    lanternDmgBonus: 0,
+    enemyHpMultElite: 1,
+    enemyHpMultNormal: 1,
+    orangeDmgMult: 1,
   };
 }
 
@@ -122,6 +138,8 @@ export function computeMods(save: SaveData): Mods {
     const r = RELICS[id];
     if (r) r.apply(m);
   }
+  // vows bind the cycle they were taken for (after a Rekindle)
+  for (const v of activeVows(save)) v.apply(m);
   return m;
 }
 

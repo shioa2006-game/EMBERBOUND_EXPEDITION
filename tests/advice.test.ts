@@ -2,7 +2,7 @@
 import { describe, expect, it } from 'vitest';
 import { simulateRun } from '../src/core/battle.ts';
 import type { AreaId, HeroId, RunEndReason, RunResult } from '../src/core/types.ts';
-import { changeSinceLastRun, firstDownLine, killedByAdvice, reasonAdvice } from '../src/ui/advice.ts';
+import { changeSinceLastRun, firstDownLine, killedByAdvice, reasonAdvice, vowLine } from '../src/ui/advice.ts';
 import { makeSave } from './helpers/saves.ts';
 
 function result(o: Partial<RunResult> & { reason?: RunEndReason; area?: AreaId; stage?: number } = {}): RunResult {
@@ -36,6 +36,27 @@ describe('advice only suggests what the party has', () => {
   it('no Barrier for explosions before the Oracle joins', () => {
     expect(killedByAdvice('Crystal Miteの爆発', makeSave({ heroes: trio() })).tip).not.toContain('Barrier');
     expect(killedByAdvice('Crystal Miteの爆発', makeSave({ heroes: 'all' })).tip).toContain('Barrier');
+  });
+
+  it('no Barrier or Sanctuary while a vow leaves the Oracle at camp', () => {
+    const lone = makeSave({ heroes: 'all', prestige: 1 });
+    lone.vows = ['lone'];
+    expect(killedByAdvice('Crystal Miteの爆発', lone).tip).not.toContain('Barrier');
+    expect(killedByAdvice('Doom', lone).tip).not.toContain('Sanctuary');
+  });
+
+  it('mentions the vows only once an area keeps beating a vowed party', () => {
+    const s = makeSave({ heroes: 'all', prestige: 1 });
+    s.vows = ['steel', 'horde'];
+    s.areas.glimmer.attempts = 2;
+    expect(vowLine(result(), s)).toBeNull();
+    s.areas.glimmer.attempts = 3;
+    const l = vowLine(result(), s)!;
+    expect(l.text).toContain('鋼の誓い・群れの誓い');
+    expect(l.tip).toContain('破棄');
+    expect(vowLine(result({ reason: 'retreat' }), s)).toBeNull();
+    s.vows = [];
+    expect(vowLine(result(), s)).toBeNull();
   });
 
   it('suggests Kindling for a lantern-out only while it can still be learned', () => {

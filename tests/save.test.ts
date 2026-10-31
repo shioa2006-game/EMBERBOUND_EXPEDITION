@@ -28,7 +28,9 @@ function richSave(): SaveData {
   s.autoCast = { guardian: true, ranger: false, arcanist: true, oracle: false };
   s.settings = { sfx: false, music: true, sfxVolume: 0.25, musicVolume: 0.9, screenShake: false, damageNumbers: false };
   s.tutorial = { intro: true, mark: false, 'ボス': true };
-  s.stats = { runs: 30, kills: 900, bossKills: 4, goldEarned: 999999, embersEarned: 120, deaths: 7, interrupts: 55, perfects: 21, bestHit: 31337.5 };
+  s.stats = { runs: 30, kills: 900, bossKills: 4, goldEarned: 999999, embersEarned: 120, deaths: 7, interrupts: 55, perfects: 21, bestHit: 31337.5, vowsKept: 2 };
+  s.vows = ['steel', 'lone'];
+  s.vowBest = { steel: 1500.5, horde: 1800 };
   s.playTime = 3600.5;
   s.cycleTime = 600;
   s.endingSeen = true;
@@ -130,6 +132,12 @@ describe('sanitizeSave', () => {
     });
     expect(s.relicsOwned).toEqual(['gale_quiver', 'ember_crown']);
     expect(s.relicsEquipped).toEqual(['ember_crown']);
+  });
+
+  it('drops unknown / duplicate vows and records for unknown vows', () => {
+    const s = sanitizeSave({ prestige: 1, vows: ['steel', 'nope', 'steel', 3, 'constructor', 'fury'], vowBest: { steel: 900, nope: 50, horde: -1, fury: 'x' } });
+    expect(s.vows).toEqual(['steel', 'fury']);
+    expect(s.vowBest).toEqual({ steel: 900 });
   });
 
   // Regression: inherited Object.prototype members must not pass the known-id check.

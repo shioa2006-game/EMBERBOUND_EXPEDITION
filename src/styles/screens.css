@@ -1232,6 +1232,23 @@
 .nt-unlock-row span {
   color: var(--text-dim);
 }
+.nt-vows {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: baseline;
+  gap: 4px 12px;
+  max-width: 600px;
+  margin: 10px auto 0;
+  font-size: var(--fs-s);
+}
+.nt-vows b {
+  font-weight: normal;
+  color: var(--gold);
+}
+.nt-vow {
+  color: var(--text-dim);
+}
 
 /* intro */
 .nt-tips {

@@ -1,7 +1,7 @@
 // Balance report: several seeds x bot profiles, compact tables.
 //   node scripts/report.ts                       (3 seeds x expert/casual/noskill)
 //   node scripts/report.ts --seeds=1,2,3,4,5 --profiles=casual
-//   node scripts/report.ts --relics [--profiles=casual]   (cycle 2 with each relic forced)
+//   node scripts/report.ts --relics [--profiles=casual] [--vows=steel+horde]   (cycle 2 with each relic forced)
 //   node scripts/report.ts --gaps                (list every >5 min gap without something new)
 //   node scripts/report.ts --runs                (per-run log for each playthrough)
 import { newSave } from '../src/core/state.ts';
@@ -309,12 +309,13 @@ if (!flag('relics')) {
 
 if (flag('relics')) {
   const p = profiles[0] ?? 'casual';
-  console.log(`\nRELICS — ${p}, cycle 2 with a single forced relic (Δ from Rekindle). seeds ${seeds.join(',')}`);
+  const vows = arg('vows')?.split('+') ?? [];
+  console.log(`\nRELICS — ${p}, cycle 2 with a single forced relic (Δ from Rekindle)${vows.length ? `, vows ${vows.join('+')}` : ''}. seeds ${seeds.join(',')}`);
   const pres = seeds.map((seed) => playthrough(newSave(0), { skill: profileOf(p), seed, stopAtRekindle: true }).preRekindle!);
   console.log(['relic', 'cost', 'Holl Δ', 'Heart Δ', 'Hrt att', 'runs c2', 'per seed (heart Δ)'].join(' | '));
   for (const relic of [null, ...RELIC_LIST.map((r) => r.id)]) {
     const rows = pres.map((pre, i) => {
-      const rep = continueFromRekindle(pre, { skill: profileOf(p), seed: seeds[i] + 7, relics: relic ? [relic] : [], maxTime: 4 * 3600 });
+      const rep = continueFromRekindle(pre, { skill: profileOf(p), seed: seeds[i] + 7, relics: relic ? [relic] : [], vows, maxTime: 4 * 3600 });
       const rk = pre.playTime;
       const c2 = areaStats(rep.runs, 1);
       return {

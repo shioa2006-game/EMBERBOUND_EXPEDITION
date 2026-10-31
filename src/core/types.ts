@@ -156,6 +156,19 @@ export interface TreeNodeDef {
   apply: (m: Mods, rank: number) => void;
 }
 
+export interface VowDef {
+  id: string;
+  name: string; // Japanese
+  desc: string; // Japanese: the rule
+  hint: string; // Japanese: what the party will need
+  icon: string; // sprite key
+  /** Relic Shards paid at the Rekindle that ends a cycle kept under this vow. */
+  shards: number;
+  /** A hero this vow leaves at camp (they must be recruited for the vow to be taken). */
+  bench?: HeroId;
+  apply: (m: Mods) => void;
+}
+
 export interface RelicDef {
   id: string;
   name: string;
@@ -273,6 +286,23 @@ export interface Mods {
   phoenixAll: boolean;
   reflect: number;
   waveBarrier: number;
+  /** Hero basic attacks (Hourglass of Ash trades them for skills). */
+  autoDmgMult: number;
+  /** An orange strike that lands is thrown back at every enemy at this multiple of its damage (Mirror Aegis). */
+  mirrorStrike: number;
+  /** Heroes behind a Barrier deal this much more damage (Soulbound Chalice). */
+  barrierDmgBonus: number;
+  /** A hero's damage at 0 HP, scaling with the HP they have lost (Phoenix Plume). */
+  woundDmgBonus: number;
+  /** Party damage per hero fallen this run, stacking (Phoenix Plume: the others fight harder). */
+  fallDmgBonus: number;
+  /** Party damage at a full lantern, shrinking with it (Lantern of Eternity). */
+  lanternDmgBonus: number;
+  /** Vows: enemy max HP for elites and bosses / for normal enemies. */
+  enemyHpMultElite: number;
+  enemyHpMultNormal: number;
+  /** Vows: damage of telegraphed abilities that can be interrupted (orange). */
+  orangeDmgMult: number;
 }
 
 // ---------------------------------------------------------------------------
@@ -323,6 +353,10 @@ export interface SaveData {
   prestige: number;
   relicsOwned: string[];
   relicsEquipped: string[];
+  /** Vows (誓約) taken at the last Rekindle: handicaps for this cycle, paid back in Relic Shards. */
+  vows: string[];
+  /** Fastest cycle (cycleTime at the Rekindle that ended it) kept under each vow. */
+  vowBest: Record<string, number>;
   autoCast: Record<HeroId, boolean>;
   settings: Settings;
   tutorial: Record<string, boolean>;
@@ -336,6 +370,8 @@ export interface SaveData {
     interrupts: number;
     perfects: number;
     bestHit: number;
+    /** Vows kept through to the Rekindle that ended their cycle. */
+    vowsKept: number;
   };
   endingSeen: boolean;
   trueEndingSeen: boolean;

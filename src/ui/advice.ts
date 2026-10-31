@@ -2,7 +2,8 @@
 import { ENEMY_LIST } from '../data/enemies.ts';
 import { HEROES } from '../data/heroes.ts';
 import { formatTime } from '../core/balance.ts';
-import { allNodeViews, buyLevelsEvenly, nodeView, type NodeView } from '../core/state.ts';
+import { activeVows } from '../core/mods.ts';
+import { allNodeViews, buyLevelsEvenly, expeditionParty, nodeView, type NodeView } from '../core/state.ts';
 import { HERO_ORDER, type AbilityDef, type HeroId, type RunResult, type SaveData } from '../core/types.ts';
 
 let abilityIndex: Map<string, { ability: AbilityDef; owner: string }> | null = null;
@@ -54,7 +55,9 @@ interface Cause {
  * `victim`: the hero who fell, when one specific hero is meant (their own levels are the fix for chip damage).
  */
 function cause(by: string, save: SaveData, victim: HeroId | null): Cause {
-  const hasOracle = save.heroes.oracle.recruited;
+  // a hero left at camp by a vow offers no Sanctuary / Mark either
+  const party = expeditionParty(save);
+  const hasOracle = party.includes('oracle');
   const levelUp = victim && victim !== 'guardian' ? `${HEROES[victim].name}のレベルを重点的に上げよう` : 'レベルを上げて耐久力を上げよう';
   // detonated Doom marks / poison ticks are labelled 'Doom' / 'Venom' (not the ability that applied them)
   if (by === 'Doom') return { what: 'Doom（時限の呪い）', text: 'Doom（時限の呪い）に倒された', tip: hasOracle ? 'Sanctuaryで解除・Barrierで吸収' : '呪いの主を優先して倒そう', key: hasOracle ? '4' : undefined };
@@ -75,7 +78,7 @@ function cause(by: string, save: SaveData, victim: HeroId | null): Cause {
     return { what: by, text: `${by}に巻き込まれた`, tip: hasOracle ? 'HPに余裕を持って倒すか、Barrierで受けよう' : 'HPに余裕を持って倒そう（レベルで最大HPを上げる）' };
   }
   if (enemyNames?.has(by)) {
-    const mark = save.heroes.ranger.recruited && victim && victim !== 'guardian';
+    const mark = party.includes('ranger') && victim && victim !== 'guardian';
     return { what: `${by}の攻撃`, text: `${by}の攻撃に倒された`, tip: mark ? `Markで${by}を先に倒すか、${HEROES[victim].name}のレベルを上げよう` : 'Goldでレベルを上げてHPと攻撃力を伸ばそう' };
   }
   return { what: by, text: `${by}に倒された`, tip: 'Goldでレベルを上げよう' };
@@ -97,7 +100,7 @@ const FIGHT_ON_SEC = 5;
 export function firstDownLine(r: RunResult, save: SaveData): RecapLine | null {
   const fd = r.firstDown;
   if (!fd || r.reason === 'victory' || r.duration - fd.time < FIGHT_ON_SEC) return null;
-  if (HERO_ORDER.filter((hero) => save.heroes[hero].recruited).length < 2) return null;
+  if (expeditionParty(save).length < 2) return null;
   const name = HEROES[fd.hero].name;
   const head = `${name}（${ROLE[fd.hero]}）が${formatTime(fd.time)}で倒れた`;
   if (!fd.by) return { text: head, tip: `${name}のレベルを重点的に上げよう` };
@@ -130,6 +133,17 @@ export function reasonAdvice(r: RunResult, save: SaveData): RecapLine | null {
   }
   if (r.reason === 'wiped') return { text: 'パーティが全滅した', tip: 'Goldでレベルを上げ、スキルツリーで耐久を伸ばそう' };
   return null;
+}
+
+/** Failed departures to one area (this cycle, not yet cleared) before the recap mentions the vows. */
+const VOW_HINT_ATTEMPTS = 3;
+
+/** 「鋼の誓いの縛りがかかっている → レリックタブで破棄できる」 once an area keeps beating a vowed party. */
+export function vowLine(r: RunResult, save: SaveData): RecapLine | null {
+  const vows = activeVows(save);
+  const area = save.areas[r.areaId];
+  if (!vows.length || r.reason === 'victory' || r.reason === 'retreat' || area.cleared || area.attempts < VOW_HINT_ATTEMPTS) return null;
+  return { text: `${vows.map((v) => v.name).join('・')}の縛りがかかっている`, tip: 'レリックタブで破棄すると解ける（その誓約の報酬はなくなる）' };
 }
 
 // ─────────────────────────── change since the last run ───────────────────────────

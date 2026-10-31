@@ -348,6 +348,8 @@ export interface PlaythroughOpts {
   log?: boolean;
   /** Cycle-2 relic loadout to force (bought first, nothing else equipped). */
   relics?: string[];
+  /** Vows to take at the Rekindle into cycle 2. */
+  vows?: string[];
   /** Tree nodes to save up for (see SpendOpts). */
   pursue?: string[];
 }
@@ -475,7 +477,7 @@ export function playthrough(save: SaveData, opts: PlaythroughOpts = {}): Playthr
         break;
       }
       preRekindle = structuredClone(save);
-      const gained = rekindle(save);
+      const gained = rekindle(save, opts.vows);
       rekindleTime = t;
       push(`REKINDLE (+${gained} shards)`, 'rekindle');
       shards();
@@ -493,7 +495,7 @@ export function playthrough(save: SaveData, opts: PlaythroughOpts = {}): Playthr
 export function continueFromRekindle(pre: SaveData, opts: PlaythroughOpts = {}): PlaythroughReport {
   const save = structuredClone(pre);
   const t0 = save.playTime;
-  rekindle(save);
+  rekindle(save, opts.vows);
   spendShards(save, opts.relics);
   spendEmbers(save, { pursue: [...(opts.pursue ?? []), ...(opts.skill?.pursue ?? [])], wantAuto: (opts.skill?.autoMode ?? 'none') !== 'none' });
   const rep = playthrough(save, opts);

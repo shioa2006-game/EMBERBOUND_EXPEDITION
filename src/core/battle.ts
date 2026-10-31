@@ -6,7 +6,7 @@ import { HEROES } from '../data/heroes.ts';
 import { BAL, enemyDmgAt, enemyGoldAt, enemyHpAt, stageIndexGlobal } from './balance.ts';
 import { computeMods } from './mods.ts';
 import { Rng } from './rng.ts';
-import { bossPity, bossShardsFor, canDescendFrom, heroStats, recruitedHeroes, skillCooldown } from './state.ts';
+import { bossPity, bossShardsFor, canDescendFrom, expeditionParty, heroStats, skillCooldown } from './state.ts';
 import {
   AREA_ORDER,
   HERO_ORDER,
@@ -147,6 +147,8 @@ export class Battle {
   private seq = 0;
   private scheduled: Scheduled[] = [];
   private phoenixUsed = new Set<number>();
+  /** Heroes fallen this run (revived or not). */
+  private falls = 0;
   private benedictionTimer = 8;
   private benedictionUntil = -1;
   private lanternWarned = false;
@@ -167,7 +169,7 @@ export class Battle {
     this.cycle2 = save.prestige >= 1;
     this.mods = cfg.mods ?? computeMods(save);
     this.rng = new Rng(cfg.seed ?? ((Date.now() ^ 0x5bd1e995) >>> 0));
-    this.party = recruitedHeroes(save);
+    this.party = expeditionParty(save);
     this.lanternMax = BAL.lanternBase + this.mods.lanternBonus;
     this.lantern = this.lanternMax;
     this.enterArea(cfg.areaId);
@@ -573,7 +575,8 @@ export class Battle {
     const u = this.makeUnit('enemy', id, def.name, def.size, def.sprite, x, y - (def.flying ? 18 : 0), slot);
     u.rank = def.rank;
     u.def = def;
-    u.maxHp = u.hp = enemyHpAt(s) * def.hp * (def.rank === 'boss' ? 1 - this.bossPityFrac : 1);
+    const vowHp = def.rank === 'normal' ? this.mods.enemyHpMultNormal : this.mods.enemyHpMultElite;
+    u.maxHp = u.hp = enemyHpAt(s) * def.hp * vowHp * (def.rank === 'boss' ? 1 - this.bossPityFrac : 1);
     u.atk = enemyDmgAt(s) * def.dmg * (def.rank === 'boss' ? 1 - this.bossPityFrac : 1);
     u.interval = def.interval;
     u.atkTimer = def.interval * (0.6 + this.rng.next() * 0.5);
@@ -675,6 +678,10 @@ export class Battle {
     if (h.glint > 0) m *= 1.1;
     if (this.overdriveActive > 0) m *= 1.5;
     if (this.lastLightActive > 0) m *= 1.4;
+    if (h.barrier > 0 && this.mods.barrierDmgBonus > 0) m *= 1 + this.mods.barrierDmgBonus;
+    if (this.mods.woundDmgBonus > 0) m *= 1 + this.mods.woundDmgBonus * Math.max(0, 1 - h.hp / h.maxHp);
+    if (this.falls > 0 && this.mods.fallDmgBonus > 0) m *= 1 + this.mods.fallDmgBonus * this.falls;
+    if (this.mods.lanternDmgBonus > 0) m *= 1 + this.mods.lanternDmgBonus * Math.min(1, Math.max(0, this.lantern / this.lanternMax));
     return m;
   }
 
@@ -1214,7 +1221,10 @@ export class Battle {
     if (!t.alive || t.untargetable > 0 || this.phase === 'bossIntro') return 0;
     const m = this.mods;
     let amt = base;
-    if (src && src.side === 'hero') amt *= this.heroDmgMult(src);
+    if (src && src.side === 'hero') {
+      amt *= this.heroDmgMult(src);
+      if (o.tag === 'auto') amt *= m.autoDmgMult;
+    }
     if (t.mark > 0 && o.tag !== 'emberNova') amt *= 1 + m.markBonus;
     if (t.stagger > 0) amt *= BAL.staggerMult;
     if (o.type === 'magic') {
@@ -1535,7 +1545,7 @@ export class Battle {
         const avg = this.heroes.reduce((s, x) => s + x.atk, 0) / this.heroes.length;
         this.emit({ type: 'fx', fx: 'shockwave', x: h.x + 20, y: h.y, src: h.id, scale: 1 });
         this.schedule(0.1, () => {
-          for (const e of this.targetableEnemies()) this.hitEnemy(null, e, avg * 1.5, { type: 'magic', tag: 'counter' });
+          for (const e of this.targetableEnemies()) this.hitEnemy(null, e, avg * 3, { type: 'magic', tag: 'counter' });
         });
       }
     }
@@ -1550,6 +1560,7 @@ export class Battle {
     h.dot = null;
     h.frozen = 0;
     this.emit({ type: 'death', id: h.id, side: 'hero', rank: 'hero' });
+    this.falls++;
     if (m.phoenixAll && !this.phoenixUsed.has(h.id)) {
       this.phoenixUsed.add(h.id);
       h.reviveTimer = 2;
@@ -1792,11 +1803,16 @@ export class Battle {
         if (!t) t = this.pickHeroFor(fx.target);
         if (!t) return;
         const tt = t;
-        const mult = fx.mult * this.perAllyMult(fx) * weak;
+        const mult = fx.mult * this.perAllyMult(fx) * weak * (a.interruptible ? this.mods.orangeDmgMult : 1);
         this.emit({ type: 'attack', src: e.id, dst: tt.id, fx: e.def!.attack === 'melee' ? 'enemyMelee' : 'enemyMagic', travel: 0.15 });
         this.schedule(0.15, () => {
           if (!e.alive || !tt.alive) return;
           this.damageHero(e, tt, e.atk * mult, { type: e.dmgType, canBlock: true, tag: 'nova', big: true, label: a.name });
+          if (a.interruptible && this.mods.mirrorStrike > 0) {
+            this.emit({ type: 'text', id: tt.id, text: 'MIRROR!', color: '#bfe8ff', size: 1.2 });
+            const back = e.atk * mult * this.mods.mirrorStrike;
+            for (const foe of this.targetableEnemies()) this.hitEnemy(null, foe, back, { type: 'true', tag: 'reflect', big: true });
+          }
           if (fx.stun && tt.alive) {
             tt.stun = Math.max(tt.stun, fx.stun);
             this.emit({ type: 'stun', id: tt.id, duration: fx.stun });
@@ -1806,7 +1822,7 @@ export class Battle {
         break;
       }
       case 'nova': {
-        let mult = fx.mult * this.perAllyMult(fx) * weak;
+        let mult = fx.mult * this.perAllyMult(fx) * weak * (a.interruptible ? this.mods.orangeDmgMult : 1);
         if (fx.wardScale && e.maxWard > 0) mult *= 1 + fx.wardScale * (e.ward / e.maxWard);
         this.emit({ type: 'fx', fx: 'nova', x: 110, y: GROUND_Y - 10, src: e.id, scale: Math.min(3, mult) });
         for (const h of this.aliveHeroes()) {

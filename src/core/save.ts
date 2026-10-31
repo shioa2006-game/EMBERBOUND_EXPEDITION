@@ -2,6 +2,7 @@
 import { newSave, SAVE_VERSION } from './state.ts';
 import { AREA_ORDER, HERO_ORDER, type SaveData } from './types.ts';
 import { RELICS } from '../data/relics.ts';
+import { VOWS } from '../data/vows.ts';
 import { TREE_BY_ID } from '../data/tree.ts';
 
 export const SAVE_KEY = 'emberbound-save-v1';
@@ -75,6 +76,11 @@ export function sanitizeSave(raw: unknown): SaveData {
     s.selectedArea = r.selectedArea as SaveData['selectedArea'];
   }
   if (Array.isArray(r.relicsOwned)) s.relicsOwned = [...new Set(r.relicsOwned.filter((x: unknown) => typeof x === 'string' && Object.hasOwn(RELICS, x)))] as string[];
+  if (Array.isArray(r.vows)) s.vows = [...new Set(r.vows.filter((x: unknown) => typeof x === 'string' && Object.hasOwn(VOWS, x)))] as string[];
+  for (const id of Object.keys(VOWS)) {
+    const t = num(r.vowBest?.[id], 0, 0);
+    if (t > 0) s.vowBest[id] = t;
+  }
   if (Array.isArray(r.relicsEquipped)) s.relicsEquipped = [...new Set(r.relicsEquipped.filter((x: unknown) => typeof x === 'string' && s.relicsOwned.includes(x as string)))] as string[];
   for (const h of HERO_ORDER) s.autoCast[h] = bool(r.autoCast?.[h], false);
   if (r.settings) {

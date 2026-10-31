@@ -4,7 +4,7 @@ import type { Notice } from '../core/state.ts';
 import type { RunEndReason, RunResult, SaveData } from '../core/types.ts';
 import type { IAudio } from '../audio/api.ts';
 import type { CampTab } from './contracts.ts';
-import { affordableLevelCount, changeSinceLastRun, firstDownLine, killedByAdvice, missedLines, nextGoal, reasonAdvice, type RecapLine, type RunChange } from './advice.ts';
+import { affordableLevelCount, changeSinceLastRun, firstDownLine, killedByAdvice, missedLines, nextGoal, reasonAdvice, vowLine, type RecapLine, type RunChange } from './advice.ts';
 import { clamp, countUp, fmt, fmtSec, h, icon, wait } from './dom.ts';
 import type { Modals } from './modal.ts';
 
@@ -189,6 +189,8 @@ export function showResult(host: ResultHost, r: RunResult, notices: Notice[]): P
     const ra = reasonAdvice(r, save);
     if (ra) recap.push(ra);
   }
+  const vow = vowLine(r, save);
+  if (vow && recap.length < MAX_RECAP) recap.push(vow);
   const recapRows = recap.map(recapRow);
   // what the upgrades since the last failed run in this area changed (this session)
   const change = changeSinceLastRun(r, save);

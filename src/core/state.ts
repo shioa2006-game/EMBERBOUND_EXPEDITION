@@ -4,8 +4,9 @@ import { AREA_SHARDS, AREAS } from '../data/areas.ts';
 import { HEROES } from '../data/heroes.ts';
 import { RELICS } from '../data/relics.ts';
 import { SYNERGY_IDS, TREE, TREE_BY_ID } from '../data/tree.ts';
+import { VOW_LIST, VOWS } from '../data/vows.ts';
 import { BAL, affordableLevels, heroLevelMult, levelCost, levelCostN } from './balance.ts';
-import { computeMods } from './mods.ts';
+import { activeVows, computeMods } from './mods.ts';
 import {
   AREA_ORDER,
   HERO_ORDER,
@@ -15,6 +16,7 @@ import {
   type RunResult,
   type SaveData,
   type TreeNodeDef,
+  type VowDef,
 } from './types.ts';
 
 export const SAVE_VERSION = 1;
@@ -46,10 +48,12 @@ export function newSave(now = Date.now()): SaveData {
     prestige: 0,
     relicsOwned: [],
     relicsEquipped: [],
+    vows: [],
+    vowBest: {},
     autoCast: { guardian: false, ranger: false, arcanist: false, oracle: false },
     settings: { sfx: true, music: true, sfxVolume: 0.7, musicVolume: 0.45, screenShake: true, damageNumbers: true },
     tutorial: {},
-    stats: { runs: 0, kills: 0, bossKills: 0, goldEarned: 0, embersEarned: 0, deaths: 0, interrupts: 0, perfects: 0, bestHit: 0 },
+    stats: { runs: 0, kills: 0, bossKills: 0, goldEarned: 0, embersEarned: 0, deaths: 0, interrupts: 0, perfects: 0, bestHit: 0, vowsKept: 0 },
     endingSeen: false,
     trueEndingSeen: false,
   };
@@ -67,6 +71,17 @@ export interface HeroStats {
 
 export function recruitedHeroes(save: SaveData): HeroId[] {
   return HERO_ORDER.filter((h) => save.heroes[h].recruited);
+}
+
+/** Heroes who set out on an expedition: the recruited ones a vow does not leave at camp. */
+export function expeditionParty(save: SaveData): HeroId[] {
+  const benched = new Set(activeVows(save).map((v) => v.bench));
+  return recruitedHeroes(save).filter((h) => !benched.has(h));
+}
+
+/** The vow that leaves this hero at camp this cycle, if any. */
+export function benchingVow(save: SaveData, hero: HeroId): VowDef | null {
+  return activeVows(save).find((v) => v.bench === hero) ?? null;
 }
 
 export function heroStats(save: SaveData, mods: Mods, hero: HeroId): HeroStats {
@@ -112,7 +127,7 @@ export function buyLevelsEvenly(save: SaveData): number {
   const mods = computeMods(save);
   let bought = 0;
   for (let guard = 0; guard < 5000; guard++) {
-    const heroes = recruitedHeroes(save);
+    const heroes = expeditionParty(save);
     let best: HeroId | null = null;
     let bestCost = Infinity;
     for (const h of heroes) {
@@ -395,17 +410,43 @@ export function canRekindle(save: SaveData): boolean {
   return save.areas.hollow.cleared;
 }
 
+/** Relic Shards for the vows kept through this cycle (paid with the Rekindle that ends it). */
+export function vowShards(save: SaveData): number {
+  return activeVows(save).reduce((a, v) => a + v.shards, 0);
+}
+
 export function rekindleShards(save: SaveData): number {
   if (!canRekindle(save)) return 0;
   const cleared = AREA_ORDER.filter((a) => save.areas[a].cleared).length;
-  return 8 + cleared + 2 * save.prestige;
+  return 8 + cleared + 2 * save.prestige + vowShards(save);
 }
 
-/** Perform Rekindle. Resets gold, levels and area progress; keeps tree, heroes, embers, relics. */
-export function rekindle(save: SaveData): number {
+/** Can this vow be taken for the next cycle? (A benching vow needs that hero in the party.) */
+export function canTakeVow(save: SaveData, id: string): boolean {
+  const v = VOWS[id];
+  return !!v && (!v.bench || save.heroes[v.bench].recruited);
+}
+
+/** Give up a vow mid-cycle: its rule lifts at once and its Shards are lost. */
+export function abandonVow(save: SaveData, id: string): boolean {
+  if (save.prestige < 1 || !save.vows.includes(id)) return false;
+  save.vows = save.vows.filter((x) => x !== id);
+  return true;
+}
+
+/** Perform Rekindle. Resets gold, levels and area progress; keeps tree, heroes, embers, relics.
+ *  `vows` are taken for the cycle that starts now. */
+export function rekindle(save: SaveData, vows: readonly string[] = []): number {
   if (!canRekindle(save)) return 0;
   const shards = rekindleShards(save);
   save.shards += shards;
+  // the vows kept through this cycle go on record before the next ones are taken
+  for (const v of activeVows(save)) {
+    const best = save.vowBest[v.id];
+    if (!best || save.cycleTime < best) save.vowBest[v.id] = save.cycleTime;
+    save.stats.vowsKept += 1;
+  }
+  save.vows = VOW_LIST.filter((v) => vows.includes(v.id) && canTakeVow(save, v.id)).map((v) => v.id);
   save.prestige += 1;
   save.gold = 0;
   save.cycleTime = 0;

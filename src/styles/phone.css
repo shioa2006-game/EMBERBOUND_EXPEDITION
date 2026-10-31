@@ -142,15 +142,29 @@ html {
   }
   .hud-area {
     grid-area: area;
-    display: block;
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
     min-width: 0;
-    overflow: hidden;
     color: var(--text);
     font-family: var(--font-story);
     font-size: 15px;
     line-height: 1.2;
-    text-overflow: ellipsis;
     white-space: nowrap;
+  }
+  .hud-area-name {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .hud-area-vows {
+    flex: none;
+    color: var(--gold);
+    font-family: var(--font-ui);
+    font-size: 12px;
+  }
+  .hud-area-vows:empty {
+    display: none;
   }
   .battle-top .stages {
     grid-area: stages;
@@ -762,6 +776,17 @@ html {
     min-height: 44px;
     margin-bottom: 10px;
     box-shadow: 0 -10px 12px var(--bg-1);
+  }
+  /* Rekindle: the two buttons share the footer row instead of squeezing 「やめる」 into a column */
+  .camp-rk-btns {
+    flex: 1;
+  }
+  .camp-rk-btns .camp-btn {
+    white-space: nowrap;
+  }
+  .camp-rk-confirm {
+    flex: 1;
+    min-width: 0;
   }
 }
 

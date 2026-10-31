@@ -91,7 +91,7 @@ button, input, .camp-num, .cur-value, .res-stat-v { font-variant-numeric: tabula
 }
 .btn.primary::after { border-radius: inherit; box-shadow: 0 0 22px #eda6544d; }
 .btn.ghost, .camp-btn--ghost { box-shadow: none; background: transparent; border-color: transparent; }
-.btn.danger { background: var(--paper-grain), linear-gradient(150deg, #763a40, #47232d); }
+.btn.danger, .camp-btn--danger, .camp-modal-layer .camp-btn--danger { background: var(--paper-grain), linear-gradient(150deg, #763a40, #47232d); }
 .icon-btn, .key-badge, .camp-kbd, .toggle, .range, .code-area {
   border: 1px solid #a48e6559;
   border-radius: 5px 3px 5px 3px;

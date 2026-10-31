@@ -3,6 +3,8 @@ import { AREAS } from '../data/areas.ts';
 import { HEROES } from '../data/heroes.ts';
 import { BAL } from '../core/balance.ts';
 import type { Battle } from '../core/battle.ts';
+import { activeVows } from '../core/mods.ts';
+import { benchingVow } from '../core/state.ts';
 import { AREA_ORDER, HERO_ORDER, type BattleEvent, type HeroId, type SaveData, type Unit } from '../core/types.ts';
 import type { IconKey } from '../render/sprites/index.ts';
 import { clamp, clear, flash, fmt, h, icon, isTouch, setAttr, setText, setVar, toggleClass, touchHold } from './dom.ts';
@@ -48,6 +50,8 @@ interface SkillSlot {
   pip: HTMLElement;
   vow: HTMLElement;
   locked: boolean;
+  /** Name of the vow keeping this (recruited) hero at camp, when locked for that reason. */
+  benchedBy: string | null;
 }
 
 interface Chip {
@@ -87,6 +91,8 @@ export class BattleHud {
   private retreatArmed = 0;
   private strip: HTMLElement;
   private areaEl: HTMLElement;
+  private areaName: HTMLElement;
+  private areaVows: HTMLElement;
   /** Lantern, stage pips and (phones) the area name: see dock(). */
   readonly topEl: HTMLElement;
 
@@ -129,7 +135,9 @@ export class BattleHud {
     this.bossTimer = h('div', { class: 'boss-timer hidden' });
     const stages = h('div', { class: 'stages' }, this.segChips, this.pipsEl, this.bossTimer);
     // The area's name repeats the top bar's; only phones show it (their top bar has no room).
-    this.areaEl = h('div', { class: 'hud-area' });
+    this.areaName = h('span', { class: 'hud-area-name' });
+    this.areaVows = h('span', { class: 'hud-area-vows' });
+    this.areaEl = h('div', { class: 'hud-area' }, this.areaName, this.areaVows);
     this.topEl = h('div', { class: 'hud-top' }, this.lanternEl, stages, this.areaEl);
 
     // ── run loot
@@ -244,9 +252,10 @@ export class BattleHud {
     clear(this.skillsEl);
     for (const hero of HERO_ORDER) {
       const recruited = b.party.includes(hero);
+      const benchedBy = recruited ? null : (benchingVow(this.host.getSave(), hero)?.name ?? null);
       const slot = this.slots[hero];
-      if (slot.locked === recruited) {
-        this.slots[hero] = this.makeSlot(hero, recruited);
+      if (slot.locked === recruited || slot.benchedBy !== benchedBy) {
+        this.slots[hero] = this.makeSlot(hero, recruited, benchedBy);
       }
       const s = this.slots[hero];
       toggleClass(s.auto, 'hidden', !(recruited && b.mods.autoCast));
@@ -397,7 +406,7 @@ export class BattleHud {
 
   // ─────────────────────────── builders ───────────────────────────
 
-  private makeSlot(hero: HeroId, recruited = false): SkillSlot {
+  private makeSlot(hero: HeroId, recruited = false, benchedBy: string | null = null): SkillSlot {
     const def = HEROES[hero];
     const sk = def.skill;
     const cdText = h('span', { class: 'skill-cd-text' });
@@ -450,6 +459,15 @@ export class BattleHud {
       );
       const skillBtn = btn;
       wasHeld = touchHold(skillBtn, () => this.showSkillHint(hero, skillBtn), () => this.hideHint());
+    } else if (benchedBy) {
+      // recruited, but a vow left them at camp this cycle
+      btn = h(
+        'button',
+        { class: 'skill', disabled: true, attrs: { 'aria-label': `${benchedBy}で不参加` }, tip: `${benchedBy}|${def.name}はこのサイクル野営地に残る` },
+        h('span', { class: 'skill-face' }, icon(SKILL_ICON[hero], 2, 'skill-icon')),
+        h('span', { class: 'skill-name', text: '待機' }),
+        h('span', { class: 'key-badge skill-key', text: sk.key }),
+      );
     } else {
       btn = h(
         'button',
@@ -460,7 +478,7 @@ export class BattleHud {
       );
     }
     const root = h('div', { class: `skill-slot hero-${hero}${recruited ? '' : ' locked'}`, style: `--hc: ${def.color}` }, btn, auto, pip, vow);
-    return { hero, root, btn, cdText, auto, pip, vow, locked: !recruited };
+    return { hero, root, btn, cdText, auto, pip, vow, locked: !recruited, benchedBy };
   }
 
   private makeCard(u: Unit, b: Battle): HeroCard {
@@ -538,7 +556,10 @@ export class BattleHud {
     if (sig !== this.pipSig) {
       const first = this.pipSig === '';
       this.pipSig = sig;
-      setText(this.areaEl, b.area.name);
+      setText(this.areaName, b.area.name);
+      // phones have no top bar: the vows binding this cycle ride along with the area name (never cut off)
+      const vows = activeVows(this.host.getSave());
+      setText(this.areaVows, vows.length === 1 ? vows[0].name : vows.length ? `誓約×${vows.length}` : '');
       if (first || this.pips.length !== 10) this.buildPips();
       for (let i = 0; i < 10; i++) {
         const p = this.pips[i];

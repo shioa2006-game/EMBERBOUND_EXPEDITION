@@ -11,7 +11,7 @@ here (Bash %, stagger, ROUT threshold, Ember Memory, PERFECT refund), **this fil
 |---|---|
 | `node scripts/report.ts` | 3 seeds × expert/casual/noskill: per-area table, cycle-2 table, averages, >5 min gaps, Emberbond and Battle Instinct pursuit runs. |
 | `node scripts/report.ts --brief --seeds=101,202,303,404,505,606,707,808` | one line of averages per profile — the sweep view. |
-| `node scripts/report.ts --relics [--profiles=casual]` | cycle 2 replayed from the same pre-Rekindle saves with **one forced relic** each. |
+| `node scripts/report.ts --relics [--profiles=casual] [--vows=steel+horde]` | cycle 2 replayed from the same pre-Rekindle saves with **one forced relic** each, optionally under vows (§9). |
 | `node scripts/report.ts --runs --seeds=202 --profiles=casual` | per-run log (path, end reason, levels, ROUTs, what killed the party). |
 | `node scripts/sim.ts --log [--profile=casual] [--seed=N]` | one playthrough with timeline (the original sim; default bot = `DEFAULT_SKILL`). |
 | `node scripts/diag.ts --area=rimeholt --when=boss [--levels=2] [--detail]` | freezes the casual's save at an area's first boss attempt and replays N runs per controller: kill rate, damage taken by source, damage dealt by tag, missed windups. |
@@ -94,7 +94,7 @@ legacy   kills[04:39 12:53 20:48 30:09 45:16] 1st[5.8/4.8/5.3/5.0/3.6] att[3.0/4
 each area · `att` = boss attempts until the kill · `stall` = longest streak of runs that did not push the frontier ·
 `band` = runs lasting 25–90 s · legacy = `expert@pursue=[]`.
 
-### Relics — cycle 2 with a single forced relic (casual, 6 seeds, Δ from Rekindle)
+### Relics — cycle 2 with a single forced relic (casual, 6 seeds, Δ from Rekindle; before §9's relic changes)
 
 ```
 relic              | cost | Holl Δ | Heart Δ | Hrt att | runs c2
@@ -306,3 +306,73 @@ tree only on the true-ending run, true ending +2.6 min (noskill +4.3). The milde
 
 The camp shows the reduced bonus (「初踏破ボーナス +3 Ember（再踏破）」), a 「再戦 Ember 1/4」 badge on a beaten
 area's boss card, and the Rekindle panel's RESET column lists 「初踏破・深部到達のEmberは半分」.
+
+## 9. Relics and vows (2026-10-31)
+
+After a Rekindle the party outlevels cycle 2, so the walls there are DPS / time bound: survival effects barely
+register, and which relic sits in a slot hardly matters. With both slots filled, the best pair
+(Stormhawk + Ember Crown) beat a weak one (Phoenix + Mirror) by 3:30 of a ~19 min cycle, and Stormhawk Eye
+was the top single relic for every profile (17–26%) while Mirror and Phoenix gave 2–4%. Re-tuning relics alone
+narrowed the spread (2:08) without making the choice matter. The other half is **vows (誓約)**: optional
+handicaps taken at a Rekindle for the next cycle. Each asks a different question, so a different relic answers it.
+
+### Vows (`src/data/vows.ts`)
+
+| vow | rule | Relic Shards |
+|---|---|---|
+| 鋼の誓い `steel` | elite and boss HP +50% | 4 |
+| 群れの誓い `horde` | normal enemy HP +80% | 4 |
+| 孤高の誓い `lone` | the Oracle stays at camp (needs her recruited) | 4 |
+| 激昂の誓い `fury` | orange (interruptible) abilities ×3 damage | 2 |
+
+* Chosen in the Rekindle panel (the last cycle's vows start ticked), any number at once. They bind the cycle that
+  starts there; none apply before the first Rekindle.
+* The Shards are paid with the Rekindle that ends the cycle (`rekindleShards()` includes `vowShards()`). A cycle
+  pays ~31 Shards without vows (Rekindle ~16 + bosses 15); all relics cost 74.
+* A vow can be given up at camp (relic tab, after a confirmation): the rule lifts at once and its Shards are lost.
+  The defeat recap points there after 3 failed departures to an area that is not cleared yet.
+* Records: `vowBest[id]` (fastest cycle kept under a vow, shown on its card) and `stats.vowsKept` (true-ending
+  stats).
+* 孤高 leaves the Oracle out of the battle party and out of 「均等に強化」 (`expeditionParty()`); advice no longer
+  suggests Sanctuary / Barrier while she is benched.
+* Dropped after measuring: lantern −15 s / −30 s (+0.5% / +1% cycle time), purple abilities ×1.6 / ×2.5 (+3% /
+  +2%, and the same best relic as no vow), all enemy damage ×1.6 (+6%). Survival pressure does not bind a party
+  that outlevels the content.
+
+### Relic changes (`relics.ts`)
+
+| relic | before | after |
+|---|---|---|
+| Stormhawk Eye | crit chance ×2 (min +10%), crit dmg +60%, non-crit −25% | crit chance +5% then ×1.5, crit dmg +40%, non-crit −30% |
+| Conduit Prism | Arcanist ATK +50% | +30% |
+| Bastion Heart | shockwave 150% avg ATK, party damage +20% | shockwave **300%**; +20% damage only for heroes behind a Barrier |
+| Phoenix Plume | +30% max HP, +20% damage | damage grows with HP lost (+40% at half HP); every fallen hero gives the party +25% damage for the run (stacks) |
+| Hourglass of Ash | CD −30%, Overdrive +25% | same, basic attacks −15% |
+| Lantern of Eternity | Overdrive gain ×2, +3 s duration | party damage scales with the lantern left (+35% when full) |
+| Twin Fang | Ranger ATK +20% | no ATK; Arrow Rain cooldown +4 s |
+| Mirror Aegis | reflect 150% of damage taken, Block +25% | an orange strike that lands is thrown back at every enemy at **1200%**; Shield Bash cooldown +2 s |
+| Soulbound Chalice | heal ×2, party damage +20% | heal ×1.5, +30% damage for heroes behind a Barrier |
+
+Gale Quiver, Ember Crown and Gilded Idol are unchanged. The Sanctuary description test now starts the
+Guardian at half HP so the overflow still reaches the 80% cap with the lower heal.
+
+### Results (casual, seeds 101–404, cycle 2 from the Rekindle to the true ending, one forced relic)
+
+| vows | no relic | 1st | 2nd | 3rd | last |
+|---|---|---|---|---|---|
+| none | 18:48 | Chalice 12.3% | Idol 11.8% | Lantern 11.6% | Bastion 3.0% |
+| steel | 22:57 (+22%) | Ember Crown 20.6% | Chalice 19.0% | Gale 18.7% | Phoenix 9.1% |
+| horde | 23:15 (+24%) | Idol 15.7% | Ember Crown 12.9% | Conduit 12.6% | Hourglass 4.3% |
+| lone | 22:28 (+19%) | Hourglass 30.2% | Phoenix 25.5% | Stormhawk 24.1% | Twin Fang 11.4% |
+| fury | 19:37 (+4%) | Lantern 17.1% | Hourglass 13.6% | Mirror 12.3% | Stormhawk 7.6% |
+| steel+horde | 25:53 (+38%) | Ember Crown 20.0% | Stormhawk 16.5% | Chalice 12.2% | Phoenix 0.6% |
+| steel+lone | 25:38 (+36%) | Hourglass 26.7% | Stormhawk 24.8% | Bastion 21.9% | Mirror 3.4% |
+
+The best relic now differs by vow; before the Stormhawk change it was Stormhawk under every vow. Stormhawk was
+very sensitive to its flat crit bonus (+2.5%: 1% faster than no relic, +5% with ×1.75: 14%); the chosen numbers
+put it mid-pack alone and near the top in the combinations. `lone` was +35% while the bot still levelled the
+benched Oracle; with `expeditionParty()` it is +19%, so its reward went 6 → 4. Differences of 2–3 points are
+within seed noise at 4 seeds. `fury` is light for the bot because it interrupts reliably; a player who misses
+interrupts will feel it more (not measured). Reproduce the per-vow ranking with
+`node scripts/report.ts --relics --profiles=casual --vows=steel+horde` (it reports the first Heart kill, not the
+true ending, so the numbers differ from the table).

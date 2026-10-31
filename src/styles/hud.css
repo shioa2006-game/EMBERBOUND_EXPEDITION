@@ -92,6 +92,16 @@
   background: rgba(111, 227, 255, 0.1);
   box-shadow: inset 0 0 0 1px rgba(111, 227, 255, 0.4);
 }
+.tb-vow {
+  flex: none;
+  padding: 1px 6px;
+  border-radius: 5px 3px 5px 3px;
+  font-size: 13px;
+  color: var(--gold);
+  background: rgba(233, 198, 123, 0.1);
+  box-shadow: inset 0 0 0 1px rgba(233, 198, 123, 0.45);
+  white-space: nowrap;
+}
 
 .tb-currencies {
   display: flex;
@@ -1565,6 +1575,10 @@
 }
 .skill-slot.locked .key-badge {
   opacity: 0.4;
+}
+.skill-slot.locked .skill-icon {
+  opacity: 0.35;
+  filter: grayscale(1);
 }
 
 /* overdrive */

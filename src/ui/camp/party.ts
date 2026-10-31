@@ -7,6 +7,8 @@ import {
   heroLevelCost,
   heroStats,
   maxAffordableLevels,
+  benchingVow,
+  expeditionParty,
   recruitedHeroes,
   skillCooldown,
   type HeroStats,
@@ -52,6 +54,8 @@ interface HeroCard {
   skillDesc: HTMLElement;
   skillBox: HTMLElement;
   mechanic: HTMLElement;
+  /** "left at camp by a vow" note */
+  bench: HTMLElement;
   buys: Record<BuyKind, BuyButton>;
   pose: SpritePose;
   poseUntil: number;
@@ -210,7 +214,7 @@ export class PartyTab implements TabView {
   hasAction(): boolean {
     const save = this.host.save();
     const mods = this.host.mods();
-    return recruitedHeroes(save).some((hId) => heroLevelCost(save, hId, 1, mods) <= save.gold);
+    return expeditionParty(save).some((hId) => heroLevelCost(save, hId, 1, mods) <= save.gold);
   }
 
   // ─────────────────────────── Building ───────────────────────────
@@ -303,10 +307,12 @@ export class PartyTab implements TabView {
       h('p', 'camp-skill-perfect', h('span', 'camp-perfect-tag', 'PERFECT'), sk.perfect),
     );
     const mechanic = h('p', 'camp-hero-mech');
+    const bench = h('div', 'camp-hero-bench');
     const el = h(
       'article',
       { class: 'camp-hero', style: `--hc:${HERO_COLOR[hero]}`, data: { hero } },
       h('div', 'camp-hero-ribbon', 'NEW'),
+      bench,
       h(
         'div',
         'camp-hero-top',
@@ -351,6 +357,7 @@ export class PartyTab implements TabView {
       skillDesc,
       skillBox,
       mechanic,
+      bench,
       buys,
       pose: 'idle',
       poseUntil: 0,
@@ -403,6 +410,9 @@ export class PartyTab implements TabView {
       card.mechanic.dataset.tip = `${HEROES[hero].name}|${mech}`;
     }
     setText(card.cdMeta, `[${HEROES[hero].skill.key}] CD ${cd % 1 ? cd.toFixed(1) : cd}s`);
+    const vow = benchingVow(save, hero);
+    card.el.classList.toggle('is-benched', !!vow);
+    setText(card.bench, vow ? `${vow.name}：このサイクルは野営地に残る` : '');
     const level = save.heroes[hero].level;
     setText(card.lv, String(level));
     const t = gearTier(level);
@@ -467,10 +477,13 @@ export class PartyTab implements TabView {
       const cur = heroStats(save, mods, hero);
       const n = add[hero] ?? 0;
       const nxt = n > 0 ? heroStats(withLevel(save, hero, level + n), mods, hero) : cur;
-      dpsNow += estDps(cur);
-      dpsNext += estDps(nxt);
-      hpNow += cur.maxHp;
-      hpNext += nxt.maxHp;
+      // a hero a vow leaves at camp does not count toward the party's power
+      if (!benchingVow(save, hero)) {
+        dpsNow += estDps(cur);
+        dpsNext += estDps(nxt);
+        hpNow += cur.maxHp;
+        hpNext += nxt.maxHp;
+      }
       setText(card.stats.atk.val, fmtStat(cur.atk));
       setText(card.stats.hp.val, fmtStat(cur.maxHp));
       setText(card.stats.spd.val, `${cur.interval.toFixed(2)}s`);

@@ -1,4 +1,5 @@
-// Top bar shared by battle and camp: area name, currencies (loot targets), playtime, sound & settings.
+// Top bar shared by battle and camp: area name, cycle & vows, currencies (loot targets), playtime, sound & settings.
+import { activeVows } from '../core/mods.ts';
 import type { Loot, SaveData } from '../core/types.ts';
 import type { LootTargets } from '../render/api.ts';
 import { flash, fmt, fmtClock, h, icon, setText, toggleClass } from './dom.ts';
@@ -68,6 +69,8 @@ export class TopBar {
   private areaName: HTMLElement;
   private areaSub: HTMLElement;
   private cycleChip: HTMLElement;
+  private vowChip: HTMLElement;
+  private vowSig = '';
   private gold: Counter;
   private ember: Counter;
   private shard: Counter;
@@ -89,6 +92,7 @@ export class TopBar {
     this.areaName = h('div', { class: 'tb-area-name' });
     this.areaSub = h('div', { class: 'tb-area-sub' });
     this.cycleChip = h('span', { class: 'tb-cycle', tip: '周回|現在の周回（Rekindle（転生）するたびに+1）' });
+    this.vowChip = h('span', { class: 'tb-vow hidden' });
     this.time = h('span', { class: 'tb-time-value', text: '0:00:00' });
     this.soundBtn = h('button', {
       class: 'icon-btn tb-sound',
@@ -115,7 +119,7 @@ export class TopBar {
         'div',
         { class: 'tb-area' },
         h('div', { class: 'tb-area-icon' }, icon('lantern', 2)),
-        h('div', { class: 'tb-area-text' }, h('div', { class: 'tb-area-line' }, this.areaName, this.cycleChip), this.areaSub),
+        h('div', { class: 'tb-area-text' }, h('div', { class: 'tb-area-line' }, this.areaName, this.cycleChip, this.vowChip), this.areaSub),
       ),
       h('div', { class: 'tb-currencies' }, this.gold.root, this.ember.root, this.shard.root),
       h(
@@ -155,6 +159,15 @@ export class TopBar {
     }
     toggleClass(this.cycleChip, 'hidden', save.prestige < 1);
     if (save.prestige >= 1) setText(this.cycleChip, `周回 ${save.prestige + 1}`);
+    const vows = activeVows(save);
+    const sig = vows.map((v) => v.id).join();
+    if (sig !== this.vowSig) {
+      this.vowSig = sig;
+      toggleClass(this.vowChip, 'hidden', vows.length === 0);
+      setText(this.vowChip, vows.length === 1 ? vows[0].name : `誓約 ×${vows.length}`);
+      const lines = vows.map((v) => `${v.name}：${v.desc}`).join('\n');
+      this.vowChip.dataset.tip = `このサイクルの誓約|${lines}\n守り通してRekindleすると Relic Shard +${vows.reduce((a, v) => a + v.shards, 0)}`;
+    }
 
     const gold = save.gold + (live?.gold ?? 0);
     const embers = save.embers + (live?.embers ?? 0);

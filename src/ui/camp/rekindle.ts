@@ -1,11 +1,15 @@
-// Rekindle (prestige) panel: RESET / KEEP / GAIN with real numbers and a double confirmation.
+// Rekindle (prestige) panel: RESET / KEEP / GAIN with real numbers, the vows for the next cycle,
+// and a double confirmation.
 import { BAL } from '../../core/balance.ts';
-import { canRekindle, recruitedHeroes, rekindle, rekindleShards } from '../../core/state.ts';
+import { activeVows } from '../../core/mods.ts';
+import { canRekindle, canTakeVow, recruitedHeroes, rekindle, rekindleShards, vowShards } from '../../core/state.ts';
 import { AREA_ORDER, HERO_ORDER } from '../../core/types.ts';
 import { AREAS } from '../../data/areas.ts';
 import { HEROES } from '../../data/heroes.ts';
 import { TREE } from '../../data/tree.ts';
-import { isTouch } from '../dom.ts';
+import { VOW_LIST } from '../../data/vows.ts';
+import type { IconKey } from '../../render/sprites/index.ts';
+import { fmtDuration, isTouch } from '../dom.ts';
 import { fmt, fracText, h, icon, type Child } from './dom.ts';
 import type { CampHost } from './host.ts';
 
@@ -69,6 +73,12 @@ export function openRekindle(host: CampHost): void {
   gain.appendChild(
     row([icon('shard', 24), 'Relic Shard'], h('b', 'camp-rk-big camp-shard', `+${fmt(shards)}`), 'camp-rk-row--hero'),
   );
+  const kept = activeVows(save);
+  if (kept.length) {
+    gain.appendChild(
+      row([icon('crown', 20), '守った誓約'], h('span', null, kept.map((v) => v.name).join('・'), ' ', h('b', 'camp-shard', `+${vowShards(save)}`), h('small', 'camp-dim', '（上に含む）'))),
+    );
+  }
   gain.appendChild(
     row(
       [icon('heart', 20), 'Ember Memory'],
@@ -96,6 +106,57 @@ export function openRekindle(host: CampHost): void {
   }
   gain.appendChild(row([icon('skull', 20), 'ボス初撃破'], h('span', null, '各ボスが再び ', h('b', 'camp-shard', 'Relic Shard'), ' を落とす')));
 
+  // VOWS: optional handicaps for the next cycle; the last cycle's vows start ticked
+  const chosen = new Set(save.vows.filter((id) => canTakeVow(save, id)));
+  const vowSum = h('div', 'camp-rk-vow-sum');
+  const vowGrid = h('div', 'camp-rk-vow-grid');
+  const syncVows = () => {
+    const n = VOW_LIST.filter((v) => chosen.has(v.id)).reduce((a, v) => a + v.shards, 0);
+    for (const card of vowGrid.querySelectorAll<HTMLElement>('[data-vow]')) {
+      const on = chosen.has(card.dataset.vow!);
+      card.classList.toggle('is-on', on);
+      card.setAttribute('aria-pressed', on ? 'true' : 'false');
+    }
+    vowSum.replaceChildren(
+      chosen.size
+        ? h('span', null, `${chosen.size}つの誓約を立てる：守り通してRekindleすると `, h('b', 'camp-shard', `+${n} Relic Shard`))
+        : h('span', 'camp-dim', '誓約なしで進む（いつも通りの周回）'),
+    );
+  };
+  for (const v of VOW_LIST) {
+    const ok = canTakeVow(save, v.id);
+    const best = save.vowBest[v.id];
+    const card = h(
+      'button',
+      { class: `camp-rk-vow${ok ? '' : ' is-off'}`, attrs: { type: 'button', 'aria-pressed': 'false', 'aria-disabled': ok ? 'false' : 'true' }, data: { vow: v.id } },
+      h('span', 'camp-rk-vow-head', icon(v.icon as IconKey, 20), h('b', null, v.name), h('span', 'camp-rk-vow-reward camp-shard', icon('shard', 16), `+${v.shards}`)),
+      h('span', 'camp-rk-vow-desc', v.desc),
+      h('small', 'camp-rk-vow-hint', ok ? v.hint : `${HEROES[v.bench!].name}が仲間にいないと立てられない`),
+      best ? h('small', 'camp-rk-vow-best', `この誓約での最速周回 ${fmtDuration(best)}`) : null,
+    );
+    card.addEventListener('click', () => {
+      if (!ok) {
+        host.sfx('uiError');
+        return;
+      }
+      if (chosen.has(v.id)) chosen.delete(v.id);
+      else chosen.add(v.id);
+      host.sfx('uiClick', { pitch: chosen.has(v.id) ? 1.15 : 0.85 });
+      disarm();
+      syncVows();
+    });
+    vowGrid.appendChild(card);
+  }
+  syncVows();
+  const vows = h(
+    'section',
+    'camp-rk-vows',
+    h('h3', null, 'VOWS', h('small', null, '誓約（任意）')),
+    h('p', 'camp-rk-vows-intro', `CYCLE ${nextCycle} だけに課す縛り。守り通して次のRekindleをすると Relic Shard がもらえる。周回の途中でもレリックタブから破棄できる（報酬はなくなる）。`),
+    vowGrid,
+    vowSum,
+  );
+
   const confirm = h('button', { class: 'camp-btn camp-btn--rekindle camp-rk-confirm', attrs: { type: 'button' } }, 'Rekindleする');
   const cancel = h('button', { class: 'camp-btn camp-btn--ghost', attrs: { type: 'button' } }, 'やめる');
   const note = h('div', 'camp-rk-note', '※ 2回押して確定します');
@@ -119,6 +180,7 @@ export function openRekindle(host: CampHost): void {
       h('section', 'camp-rk-col camp-rk-col--keep', h('h3', null, 'KEEP', h('small', null, '引き継ぐもの')), keep),
       h('section', 'camp-rk-col camp-rk-col--gain', h('h3', null, 'GAIN', h('small', null, '得るもの')), gain),
     ),
+    vows,
     ),
     h('footer', 'camp-rk-foot dialog-footer', note, h('div', 'camp-rk-btns', cancel, confirm)),
   );
@@ -126,13 +188,14 @@ export function openRekindle(host: CampHost): void {
   let armed = false;
   let armTimer = 0;
   let left = ARM_SECONDS;
-  const disarm = () => {
+  function disarm(): void {
+    if (!armed) return;
     armed = false;
     window.clearInterval(armTimer);
     confirm.classList.remove('is-armed');
     confirm.textContent = 'Rekindleする';
     note.textContent = '※ 2回押して確定します';
-  };
+  }
   const close = host.openModal(panel, () => window.clearInterval(armTimer));
 
   cancel.addEventListener('click', () => {
@@ -160,7 +223,7 @@ export function openRekindle(host: CampHost): void {
     }
     disarm();
     const live = host.save();
-    const gained = rekindle(live);
+    const gained = rekindle(live, [...chosen]);
     host.clearNotices();
     close();
     host.sfx('rekindle');
