@@ -21,7 +21,13 @@ interface Lights { distant: Light[]; far: Light[]; middle: Light[]; near: Light[
 interface Scene {
   sky: Layer; distant: Layer; far: Layer; middle: Layer; near: Layer; floor: Layer;
   frontTop: Layer; frontBottom: Layer; mist: Layer; lights: Lights;
+  /** Baked on first use: the deeper stages' props and the boss arena. */
+  deep?: Deep; arena?: Arena;
 }
+/** Props of the deeper stages (5–9), between the middle and near layers. */
+interface Deep { layer: Layer; lights: Light[] }
+/** The boss arena: one backdrop down to the floor line, fixed to the screen (the party stops walking). */
+interface Arena { layer: Layer; lights: Light[] }
 
 /** What the battle tells the scenery: how much lantern is left and where the party carries it. */
 export interface SceneMood {
@@ -32,12 +38,14 @@ export interface SceneMood {
   /** World x of the lantern (the party's centre). */
   lightX: number;
   overdrive: boolean;
+  /** How far into the area: 0 = stages 1–4, 1 = stages 5–9, 2 = the boss. Fractions blend while the party walks on. */
+  depth?: number;
 }
 const CALM: SceneMood = { lantern: 1, flare: 0, lightX: 108, overdrive: false };
 
 const W = 400, H = 180, TILE = 480, SCALE = 4, TAU = Math.PI * 2;
 /** Scroll speed of each layer relative to the fighting plane. */
-const PAR = { distant: .1, far: .2, mist: .35, middle: .54, near: .8, floor: 1, ground: .95, front: 1.15 } as const;
+const PAR = { distant: .1, far: .2, mist: .35, middle: .54, deep: .66, near: .8, floor: 1, ground: .95, front: 1.15 } as const;
 const COLOURS: Record<AreaId, Colours> = {
   ashwood: { sky: '#191b29', horizon: '#76605d', far: '#45434c', middle: '#4c4244', stone: '#746359', soil: '#55483e', ink: '#211f25', light: '#c8ab88', accent: '#f6b76d', glow: '#ff9a4c' },
   ruins: { sky: '#14272e', horizon: '#547c79', far: '#34575b', middle: '#3c6465', stone: '#72918b', soil: '#4c6561', ink: '#203739', light: '#b8cbb4', accent: '#a0e4ce', glow: '#9cf2dc' },
@@ -735,10 +743,390 @@ function scene(id: AreaId): Scene {
   if (scenes.size > 2) {
     const first = scenes.keys().next().value!;
     const old = scenes.get(first)!;
-    for (const value of Object.values(old)) if ('c' in value) { value.c.width = 1; value.c.height = 1; }
+    const baked = [...Object.values(old), old.deep?.layer, old.arena?.layer];
+    for (const value of baked) if (value && 'c' in value) { value.c.width = 1; value.c.height = 1; }
     scenes.delete(first);
   }
   return s;
+}
+
+// ───────────────────────────── depth: the deeper stages and the boss arena ─────────────────────────────
+// Stages 1–4 show the area as above. Stages 5–9 add the area's deeper props and let the dark close in;
+// the boss (stage 10) replaces everything behind the near props with an arena of its own.
+
+/** How the deeper stages darken (`shade`) and what rises from the horizon (`glow`, at strength `heat`). */
+const DEPTH: Record<AreaId, { shade: string; glow: string; heat: number }> = {
+  ashwood: { shade: '#1c0905', glow: '#ff5a24', heat: .16 }, // the fire spreads
+  ruins: { shade: '#02111a', glow: '#3fa7a0', heat: .07 }, // deeper water
+  glimmer: { shade: '#130a24', glow: '#c88cff', heat: .1 }, // the crystal veins thicken
+  rimeholt: { shade: '#0a1322', glow: '#8fb8ff', heat: .06 }, // inside the keep's walls
+  hollow: { shade: '#04030a', glow: '#9ec06a', heat: .08 }, // the ground comes apart
+  heart: { shade: '#1e0704', glow: '#ff6a2a', heat: .18 }, // closer to the heart
+};
+/** Where each arena's window looks out (Rimeholt's throne room); the aurora is clipped to it. */
+const THRONE_WINDOW = { x: 292, top: 16, bottom: 98, half: 30 };
+
+/** A burst of fire: a few curling tongues, baked; the lights placed with it make it flicker. */
+function flame(g: Ctx, x: number, y: number, h: number, w: number, seed: number, outer = '#e8743a', inner = '#ffd27a', ink = '#8a3418'): void {
+  const r = rng(seed);
+  const tongue = (cx: number, th: number, tw: number, bend: number, fill: string, edge: number): void => {
+    g.beginPath(); g.moveTo(cx - tw, y);
+    g.bezierCurveTo(cx - tw * 1.3, y - th * .5, cx + bend - tw * .4, y - th * .8, cx + bend, y - th);
+    g.bezierCurveTo(cx + bend + tw * .2, y - th * .6, cx + tw * 1.3, y - th * .35, cx + tw, y);
+    g.closePath(); g.fillStyle = fill; g.fill();
+    if (edge > 0) { g.strokeStyle = ink; g.lineWidth = edge; g.stroke(); }
+  };
+  for (let k = 0; k < 4; k++) tongue(x + (k - 1.5) * w * .5, h * (k === 1 || k === 2 ? .8 + r() * .2 : .45 + r() * .2), w * .45, (r() - .5) * w * 1.2, outer, .3);
+  for (let k = 0; k < 2; k++) tongue(x + (k - .5) * w * .4, h * (.4 + r() * .2), w * .28, (r() - .5) * w * .6, inner, 0);
+}
+/** A crystal pointing in direction `a` (radians, screen space) from its base at x, y. */
+function crystalAt(g: Ctx, x: number, y: number, a: number, height: number, width: number, p: Colours, seed: number): void {
+  g.save(); g.translate(x, y); g.rotate(a + Math.PI / 2); crystal(g, 0, 0, height, width, p, seed); g.restore();
+}
+function throneWindow(g: Ctx): void {
+  const { x, top, bottom, half } = THRONE_WINDOW;
+  g.beginPath(); g.moveTo(x - half, bottom); g.lineTo(x - half, top + half); g.arc(x, top + half, half, Math.PI, 0); g.lineTo(x + half, bottom); g.closePath();
+}
+
+function deepLayer(id: AreaId, p: Colours): Deep {
+  const lights: Light[] = [];
+  const strip = layer(TILE, 0, 150, 3, g => {
+    if (id === 'ashwood') {
+      // The fire has reached these trees: crowns ablaze, embers glowing between the roots.
+      spots(3110, 3, .5).forEach((x, i) => {
+        const height = 104 + i % 2 * 14, wide = 4 + i % 2;
+        wrapped(g, x, xx => {
+          glow(g, xx, 138 - height * .72, 34, p.glow, .22, .8);
+          tree(g, xx, 138, height, wide, mix(p.middle, p.ink, .25), p.ink, 3111 + i, true);
+          const crown: [number, number, number][] = [[-14, .6, 14], [-5, .78, 18], [6, .7, 16], [15, .56, 12], [0, .92, 15], [-20, .45, 10]];
+          crown.forEach(([dx, up, h], k) => flame(g, xx + dx, 138 - height * up, h, 7 + k % 3 * 2, 3120 + i * 9 + k));
+          flame(g, xx - 6, 138, 8, 8, 3128 + i);
+          ellipse(g, xx, 138, 14, 1.6, '#e0773e', .55);
+        });
+        lights.push({ x, y: 138 - height * .72, r: 34, a: .6, kind: 'flicker', phase: i * 2.2, color: p.glow });
+        lights.push({ x, y: 137, r: 14, a: .45, kind: 'flicker', phase: i * 1.3 + 1, color: '#ff7a3a' });
+      });
+    } else if (id === 'ruins') {
+      // Deeper water: kelp forests rise out of the silt and a drowned colossus watches the road.
+      spots(3130, 5, .8).forEach((x, i) => {
+        wrapped(g, x, xx => {
+          for (let k = 0; k < 5; k++) {
+            const len = 50 + (k * 13 + i * 7) % 40, bx = xx + (k - 2) * 4, sway = k % 2 ? 3 : -2.5;
+            paint(g, [[bx - 1.6, 139], [bx + 1.6, 139], [bx + 1.2 + sway, 139 - len * .5], [bx + .4 + sway * .3, 139 - len], [bx - 1.2 + sway, 139 - len * .55]], mix(p.middle, p.ink, .3 + k % 2 * .15), p.ink, 3131 + k + i * 5, false, .3);
+          }
+        });
+        lights.push({ x: x + 2, y: 139 - 50 - (i * 9) % 30, r: 6, a: .45, kind: 'pulse', phase: i * 1.7, color: p.accent });
+      });
+      wrapped(g, 300, x => {
+        const stoneDark = mix(p.stone, p.ink, .3);
+        paint(g, [[x - 46, 140], [x - 40, 118], [x - 18, 108], [x + 20, 110], [x + 40, 124], [x + 44, 140]], stoneDark, p.ink, 3140, true, .55);
+        paint(g, [[x - 16, 112], [x - 18, 86], [x - 8, 72], [x + 8, 72], [x + 17, 86], [x + 15, 112]], mix(p.stone, p.ink, .18), p.ink, 3141, true, .55);
+        line(g, [[x - 10, 90], [x - 4, 91]], p.ink, .7); line(g, [[x + 4, 91], [x + 10, 90]], p.ink, .7);
+        line(g, [[x, 92], [x - 1.5, 99], [x + 1, 100]], p.ink, .5); line(g, [[x - 5, 104], [x + 5, 104.5]], p.ink, .5);
+        line(g, [[x + 9, 74], [x + 5, 82], [x + 10, 88]], p.ink, .5, .8);
+        for (let k = 0; k < 6; k++) line(g, [[x - 14 + k * 5, 73], [x - 15 + k * 5, 66 - k % 2 * 4]], mix(p.accent, p.ink, .4), .6, .75);
+      });
+    } else if (id === 'glimmer') {
+      // The veins thicken: crystals as tall as the cave, glowing from within.
+      const bright = { ...p, stone: mix(p.stone, p.accent, .25) }, rose = { ...p, stone: '#8a6fa0', accent: '#e3a0c8' };
+      spots(3150, 3, .5).forEach((x, i) => {
+        wrapped(g, x, xx => {
+          line(g, [[xx - 62, 58 + i * 9], [xx - 36, 68], [xx - 24, 64], [xx - 12, 78]], p.accent, .7, .5);
+          crystal(g, xx - 10, 139, 72 + i * 9, 24, bright, 3151 + i, -6);
+          crystal(g, xx + 12, 139, 46 + i * 6, 18, rose, 3155 + i, 9);
+          crystal(g, xx + 26, 139, 22, 10, p, 3159 + i, 5);
+        });
+        lights.push({ x: x - 10, y: 139 - (72 + i * 9) * .5, r: 30, a: .5, kind: 'pulse', phase: i * 1.7, color: p.glow });
+        lights.push({ x: x + 12, y: 139 - (46 + i * 6) * .5, r: 18, a: .4, kind: 'pulse', phase: i * 2.3 + 1, color: '#ff9bd0' });
+      });
+    } else if (id === 'rimeholt') {
+      // Inside the walls: frozen columns hung with the keep's banners.
+      const ice = { ...p, stone: mix(p.stone, p.accent, .3) };
+      spots(3170, 4, .5).forEach((x, i) => {
+        wrapped(g, x, xx => {
+          pillar(g, xx, 138, 118, ice, 3171 + i);
+          for (let k = 0; k < 5; k++) paint(g, [[xx - 5.5 + k * 2.6, 22], [xx - 4.2 + k * 2.6, 22], [xx - 4.8 + k * 2.6, 28 + (k * 3) % 7]], mix(p.accent, '#ffffff', .3), p.ink, 3180 + k, false, .2);
+          if (i % 2 === 0) {
+            const bx = xx + 24;
+            line(g, [[bx - 9, 30], [bx + 9, 30]], p.ink, .8);
+            paint(g, [[bx - 8, 30], [bx + 8, 30], [bx + 8, 78], [bx + 4, 72], [bx, 80], [bx - 4, 72], [bx - 8, 78]], '#4a3346', p.ink, 3190 + i, true, .45);
+            line(g, [[bx - 3, 46], [bx, 41], [bx + 3, 46], [bx, 52], [bx - 3, 46]], '#c9b37a', .55, .85);
+            line(g, [[bx - 8, 31], [bx + 8, 31]], p.light, .5, .5);
+          }
+        });
+        lights.push({ x, y: 26, r: 10, a: .3, kind: 'pulse', phase: i * 1.3, color: p.accent });
+      });
+    } else if (id === 'hollow') {
+      // The ground comes apart: slabs of road drift up toward the black sun, shedding grit.
+      spots(3200, 4, .6).forEach((x, i) => {
+        const y = 58 + (i * 17) % 34, w = 16 + i % 2 * 9;
+        wrapped(g, x, xx => {
+          paint(g, [[xx - w, y], [xx - w * .6, y - 3], [xx + w * .7, y - 2], [xx + w, y + 1], [xx + w * .55, y + 7], [xx + w * .15, y + 19], [xx - w * .25, y + 13], [xx - w * .7, y + 5]], p.middle, p.ink, 3201 + i, true, .5);
+          if (i % 2 === 0) pillar(g, xx - 3, y - 1, 22 + i * 3, { ...p, stone: p.middle }, 3205 + i, true);
+          for (let k = 0; k < 4; k++) ellipse(g, xx + (k - 1.5) * 4, y + 23 + k * 4, .9, .7, p.ink, .7);
+        });
+        lights.push({ x, y: y + 5, r: 12, a: .35, kind: 'pulse', phase: i * 1.9, color: p.glow });
+      });
+      for (const x of spots(3220, 3, .7)) wrapped(g, x, xx => {
+        const cr = rng(3221 + Math.round(x)), crack: Pt[] = [];
+        for (let y = 139, cx = xx; y > 96; y -= 6) { crack.push([cx, y]); cx += (cr() - .5) * 5; }
+        line(g, crack, p.ink, 1.4, .85); line(g, crack.slice(1, -1), p.accent, .4, .7);
+      });
+    } else {
+      // Closer to the heart: rock ribs run with molten veins and the ground pools with fire.
+      spots(3240, 4, .5).forEach((x, i) => {
+        const h = 96 + i % 2 * 20, vein: Pt[] = [[x - 3, 139], [x - 1, 139 - h * .3], [x - 4, 139 - h * .55], [x, 139 - h * .8]];
+        wrapped(g, x, xx => {
+          const v = vein.map(([a, b]) => [a - x + xx, b] as Pt);
+          paint(g, [[xx - 12, 139], [xx - 9, 139 - h * .6], [xx - 4, 139 - h], [xx + 5, 139 - h * .85], [xx + 11, 139 - h * .4], [xx + 14, 139]], mix(p.middle, p.ink, .35), p.ink, 3241 + i, true, .55);
+          line(g, v, p.accent, 1.1, .75); line(g, v, '#fff0c0', .35, .7);
+          ellipse(g, xx + 2, 139, 16, 2, p.glow, .5);
+        });
+        lights.push({ x, y: 139 - h * .45, r: 18, a: .45, kind: 'beat', phase: i * .06, color: p.glow });
+        lights.push({ x: x + 2, y: 139, r: 16, a: .4, kind: 'beat', phase: i * .06 + .03, color: p.glow });
+      });
+    }
+    haze(g, p.horizon, .26, 0, 150);
+    topLight(g, p.light, .08, 0, 125);
+    // The same thin wash as the middle layer keeps the party readable in front of it.
+    const wash = g.createLinearGradient(0, 80, 0, 145); wash.addColorStop(0, hexAlpha(p.horizon, 0)); wash.addColorStop(1, hexAlpha(p.horizon, .22)); g.fillStyle = wash; g.fillRect(0, 80, TILE, 65);
+  });
+  return { layer: strip, lights };
+}
+
+/** Each boss fights in an arena of its own: a burning giant tree, a drowned altar, the geode's heart, … */
+function arenaLayer(id: AreaId, p: Colours): Arena {
+  const lights: Light[] = [];
+  const sky = (g: Ctx, stops: [number, string][]): void => {
+    const grad = g.createLinearGradient(0, 0, 0, 142); for (const [t, c] of stops) grad.addColorStop(t, c); g.fillStyle = grad; g.fillRect(0, 0, W, 142);
+  };
+  const backdrop = layer(W, 0, 142, 3, g => {
+    const r = rng(3300 + id.length * 11);
+    if (id === 'ashwood') {
+      // 燃える巨木: the forest's oldest tree burns from the roots up; the boss stands at its foot.
+      sky(g, [[0, '#140b12'], [.45, '#3d1a18'], [.8, '#a2472a'], [1, '#5a2b20']]);
+      glow(g, 296, 104, 170, '#ff7a3a', .22, .6);
+      ridge(g, 124, 5, '#2b1817', 9);
+      for (let i = 0; i < 40; i++) { const x = r() * W, h = 8 + r() * 16, y = ridgeY(x, 124, 5, 9) + 2; line(g, [[x, y], [x + (r() - .5) * 3, y - h]], '#1d1012', .55, .8); }
+      for (let i = 0; i < 14; i++) ellipse(g, r() * W, 6 + r() * 34, 18 + r() * 30, 5 + r() * 6, '#1a0f14', .45);
+      tree(g, 30, 142, 124, 4, '#2a1a19', '#120a0b', 3320, true);
+      tree(g, 118, 142, 92, 3, '#2a1a19', '#120a0b', 3321, true);
+      const x = 296;
+      paint(g, [[x - 72, 142], [x - 44, 130], [x - 28, 110], [x + 26, 110], [x + 46, 128], [x + 76, 142]], '#2e1d1a', '#120a0b', 3301, true, .7);
+      paint(g, [[x - 30, 122], [x - 24, 70], [x - 20, 30], [x - 26, -4], [x + 24, -4], [x + 18, 34], [x + 22, 72], [x + 30, 122]], '#3a2420', '#140b0c', 3302, true, .8);
+      for (let k = 0; k < 9; k++) { const bx = x - 22 + k * 5.5; line(g, [[bx, 120], [bx + (r() - .5) * 4, 80], [bx + (r() - .5) * 3, 34], [bx, 0]], '#140b0c', .4, .45); }
+      const boughs: Pt[][] = [[[x - 20, 40], [x - 60, 22], [x - 110, 14], [x - 160, 4]], [[x + 18, 34], [x + 60, 18], [x + 104, -2]], [[x - 60, 22], [x - 82, -3]], [[x + 60, 18], [x + 82, 38], [x + 106, 44]]];
+      for (const b of boughs) { line(g, b, '#140b0c', 7); line(g, b, '#3a2420', 4.2); line(g, b, '#7a3a24', .6, .6); }
+      ellipse(g, x + 2, 82, 9, 16, '#e0773e', .9); ellipse(g, x + 3, 84, 5, 10, '#ffd08a', .95);
+      const flames: [number, number, number][] = [[x - 60, 22, 18], [x - 108, 14, 16], [x - 150, 6, 14], [x + 58, 18, 20], [x + 98, 2, 16], [x + 100, 44, 14], [x - 8, 8, 22], [x + 12, 2, 18], [x - 30, 114, 10], [x + 34, 116, 12]];
+      flames.forEach(([fx, fy, h], i) => {
+        flame(g, fx, fy + 3, h * 1.2, h * .55, 3330 + i * 3);
+        lights.push({ x: fx, y: fy - h * .3, r: h * 1.4, a: .6, kind: 'flicker', phase: i * 1.7, color: p.glow });
+      });
+      lights.push({ x: x + 2, y: 82, r: 36, a: .8, kind: 'flicker', phase: .4, color: p.glow });
+    } else if (id === 'ruins') {
+      // 水没した祭壇: a stepped altar under the deepest water, its lamp still burning.
+      sky(g, [[0, '#3d7372'], [.12, '#1f4448'], [.6, '#14272e'], [1, '#2a4b4c']]);
+      for (let i = 0; i < 9; i++) line(g, [[i * 47 - 10, 5 + i % 3 * 3], [i * 47 + 8, 3 + i % 2 * 3], [i * 47 + 30, 6 + i % 3 * 2]], p.light, .5, .22);
+      g.save(); g.globalAlpha = .55;
+      for (const [ax, rad, h] of [[44, 16, 74], [140, 18, 86], [392, 15, 70]] as const) arch(g, ax, 142, rad, h, { ...p, stone: p.far, ink: p.sky }, 3340 + ax);
+      g.restore();
+      haze(g, p.horizon, .35, 0, 142);
+      const q = { ...p, stone: mix(p.stone, p.ink, .1) };
+      pillar(g, 236, 142, 104, q, 3351); pillar(g, 348, 142, 78, q, 3352, true);
+      paint(g, [[212, 142], [212, 132], [372, 132], [372, 142]], q.stone, p.ink, 3353, true, .5);
+      paint(g, [[230, 132], [230, 122], [354, 122], [354, 132]], q.stone, p.ink, 3354, true, .5);
+      paint(g, [[246, 122], [246, 112], [338, 112], [338, 122]], q.stone, p.ink, 3355, true, .5);
+      paint(g, [[272, 112], [270, 90], [314, 90], [312, 112]], mix(q.stone, p.ink, .15), p.ink, 3356, true, .55);
+      paint(g, [[264, 91], [320, 91], [318, 85], [266, 85]], q.stone, p.ink, 3357, true, .5);
+      for (const dx of [-14, 0, 14]) line(g, [[292 + dx - 4, 104], [292 + dx, 96], [292 + dx + 4, 104]], p.accent, .45, .6);
+      for (let k = 0; k < 6; k++) line(g, [[250 + k * 15, 121], [251 + k * 15, 116]], p.accent, .5, .5);
+      glow(g, 292, 74, 30, p.glow, .35);
+      ellipse(g, 292, 74, 7, 7, '#cffff0', .9);
+      g.save(); g.strokeStyle = hexAlpha(p.light, .5); g.lineWidth = .4; g.beginPath(); g.ellipse(292, 74, 10, 10, 0, 0, TAU); g.stroke(); g.restore();
+      for (const sx of [214, 370]) for (let k = 0; k < 4; k++) line(g, [[sx + k * 2, 142], [sx + k * 2 - 2, 122], [sx + k * 2 + 1, 106 - k % 2 * 6]], mix(p.accent, p.ink, .45), .7, .75);
+      lights.push({ x: 292, y: 74, r: 42, a: .7, kind: 'pulse', phase: 0, color: p.glow });
+      for (let k = 0; k < 4; k++) lights.push({ x: 258 + k * 22, y: 118, r: 8, a: .35, kind: 'pulse', phase: k * 1.4, color: p.accent });
+    } else if (id === 'glimmer') {
+      // 晶洞の最深部: a geode as big as a hall, lined with crystals that all point at its burning core.
+      g.fillStyle = '#0f0b1a'; g.fillRect(0, 0, W, 142);
+      g.save(); g.translate(292, 84); g.scale(1, .68);
+      const cave = g.createRadialGradient(0, 0, 0, 0, 0, 132); cave.addColorStop(0, '#7a5aa8'); cave.addColorStop(.5, '#3a2b58'); cave.addColorStop(1, '#0f0b1a');
+      g.fillStyle = cave; g.beginPath(); g.arc(0, 0, 132, 0, TAU); g.fill(); g.restore();
+      const bright = { ...p, stone: mix(p.stone, '#d9c2ff', .35) }, rose = { ...p, stone: '#8a6fa0', accent: '#e3a0c8' };
+      // The geode's rind: a band of dark rock with crystals growing inward from it in clusters.
+      g.save(); g.translate(292, 84); g.scale(1, .68); g.strokeStyle = '#1a1428'; g.lineWidth = 16; g.beginPath(); g.arc(0, 0, 138, 0, TAU); g.stroke(); g.restore();
+      for (let k = 0; k < 20; k++) {
+        const a = k / 20 * TAU + .08, ex = 292 + Math.cos(a) * 130, ey = 84 + Math.sin(a) * 88;
+        if (ey > 134 || ex < -6 || ex > W + 6) continue;
+        for (let j = 0; j < 3; j++) {
+          const spread = (j - 1) * .32, len = (j === 1 ? 20 : 12) + (k * 7 + j * 5) % 9;
+          crystalAt(g, ex + Math.cos(a + 1.57) * (j - 1) * 5, ey + Math.sin(a + 1.57) * (j - 1) * 5, a + Math.PI + spread, len, 5 + (j === 1 ? 2 : 0), (k + j) % 3 ? bright : rose, 3360 + k * 3 + j);
+        }
+      }
+      paint(g, [[0, 0], [150, 0], [104, 30], [74, 78], [62, 142], [0, 142]], '#1a1428', '#0b0812', 3365, true, .6);
+      crystal(g, 228, 142, 54, 18, bright, 3374, -10);
+      crystal(g, 262, 142, 96, 30, bright, 3371, -8);
+      crystal(g, 318, 142, 118, 34, bright, 3372, 6);
+      crystal(g, 356, 142, 70, 22, rose, 3373, 10);
+      for (let k = 0; k < 7; k++) crystal(g, 200 + k * 26, 142, 10 + k % 3 * 5, 6, k % 2 ? rose : p, 3380 + k, (k % 2 ? 1 : -1) * 3);
+      lights.push({ x: 292, y: 84, r: 84, a: .5, kind: 'pulse', phase: 0, color: p.glow });
+      for (const [lx, ly, rad, color] of [[262, 94, 30, p.glow], [318, 84, 34, p.glow], [356, 108, 22, '#ff9bd0'], [228, 116, 18, p.glow]] as const) lights.push({ x: lx, y: ly, r: rad, a: .55, kind: 'pulse', phase: lx * .05, color });
+    } else if (id === 'rimeholt') {
+      // 氷の玉座の間: the keep's hall, a throne of ice under a window full of aurora.
+      sky(g, [[0, '#1a2232'], [.7, '#3a4b62'], [1, '#2c3a4e']]);
+      for (let y = 8, row = 0; y < 142; y += 10, row++) {
+        line(g, [[0, y], [W, y]], p.ink, .3, .35);
+        for (let x = row % 2 * 14; x < W; x += 28) line(g, [[x, y], [x, y + 10]], p.ink, .25, .3);
+      }
+      g.save(); throneWindow(g); g.clip();
+      const night = g.createLinearGradient(0, 16, 0, 98); night.addColorStop(0, '#0b1424'); night.addColorStop(1, '#22344c'); g.fillStyle = night; g.fillRect(250, 10, 90, 92);
+      for (let i = 0; i < 24; i++) ellipse(g, 262 + r() * 60, 20 + r() * 70, .3, .3, p.light, .4 + r() * .4);
+      g.restore();
+      g.save(); throneWindow(g); g.strokeStyle = p.ink; g.lineWidth = 3; g.stroke(); g.strokeStyle = mix(p.stone, p.light, .3); g.lineWidth = 1; g.stroke(); g.restore();
+      line(g, [[292, 16], [292, 98]], p.ink, 1.4); line(g, [[262, 60], [322, 60]], p.ink, 1.4);
+      const ice = { ...p, stone: mix(p.stone, p.accent, .35) };
+      for (const x of [40, 124, 196, 384]) {
+        pillar(g, x, 142, 132, ice, 3390 + x);
+        for (let k = 0; k < 5; k++) paint(g, [[x - 5.5 + k * 2.6, 12], [x - 4.2 + k * 2.6, 12], [x - 4.8 + k * 2.6, 19 + (k * 3) % 8]], mix(p.accent, '#ffffff', .3), p.ink, 3395 + k, false, .2);
+      }
+      for (const bx of [82, 160]) {
+        paint(g, [[bx - 10, 0], [bx + 10, 0], [bx + 10, 70], [bx + 5, 63], [bx, 72], [bx - 5, 63], [bx - 10, 70]], '#4a3346', p.ink, 3400 + bx, true, .45);
+        line(g, [[bx - 4, 30], [bx, 24], [bx + 4, 30], [bx, 38], [bx - 4, 30]], '#c9b37a', .6, .85);
+      }
+      const throneIce = '#9fbfd4', throneInk = '#24344a';
+      paint(g, [[226, 142], [226, 132], [358, 132], [358, 142]], mix(p.stone, p.ink, .1), p.ink, 3410, true, .5);
+      paint(g, [[242, 132], [242, 124], [342, 124], [342, 132]], mix(p.stone, p.ink, .05), p.ink, 3411, true, .5);
+      paint(g, [[270, 124], [268, 70], [276, 52], [284, 62], [292, 38], [300, 62], [308, 52], [316, 70], [314, 124]], throneIce, throneInk, 3412, true, .6);
+      paint(g, [[258, 124], [258, 100], [270, 100], [270, 124]], throneIce, throneInk, 3413, true, .5);
+      paint(g, [[314, 124], [314, 100], [326, 100], [326, 124]], throneIce, throneInk, 3414, true, .5);
+      paint(g, [[262, 112], [322, 112], [324, 116], [260, 116]], mix(throneIce, '#ffffff', .25), throneInk, 3415, false, .5);
+      line(g, [[276, 54], [278, 120]], '#ffffff', .5, .6); line(g, [[292, 42], [292, 108]], '#ffffff', .4, .45);
+      for (const bx of [232, 352]) {
+        paint(g, [[bx - 6, 124], [bx - 8, 118], [bx + 8, 118], [bx + 6, 124]], '#4d5a6a', p.ink, 3420 + bx, false, .45);
+        flame(g, bx, 118, 12, 4, 3425 + bx, '#5fb8e8', '#e0f6ff', '#2a5a7a');
+        lights.push({ x: bx, y: 112, r: 24, a: .6, kind: 'flicker', phase: bx * .1, color: '#9fe0ff' });
+      }
+      lights.push({ x: 292, y: 58, r: 40, a: .22, kind: 'pulse', phase: 0, color: '#a8d8ff' });
+      lights.push({ x: 292, y: 84, r: 30, a: .2, kind: 'pulse', phase: 1.5, color: p.accent });
+    } else if (id === 'hollow') {
+      // 黒い太陽の真下: right under the black sun, the road breaks up and rises into it.
+      sky(g, [[0, '#05040a'], [.5, '#16142a'], [.85, '#3b394e'], [1, '#2a2838']]);
+      for (let i = 0; i < 40; i++) ellipse(g, r() * W, r() * 90, .2, .2, p.light, .1 + r() * .25);
+      glow(g, 270, 50, 140, p.accent, .12); glow(g, 270, 50, 84, p.accent, .2);
+      for (let i = 0; i < 9; i++) {
+        const sx = 20 + i * 46, pts: Pt[] = [];
+        for (let k = 0; k <= 10; k++) { const t = k / 10, e = t * t; pts.push([sx + (270 - sx) * e + Math.sin(t * 5 + i) * 6 * (1 - t), 128 + (50 - 128) * t]); }
+        line(g, pts, p.light, .3, .12);
+      }
+      ellipse(g, 270, 50, 48, 48, p.accent, .35); ellipse(g, 270, 50, 44, 44, '#030207', 1);
+      g.save(); g.strokeStyle = hexAlpha(p.light, .16); g.lineWidth = .45;
+      for (let i = 0; i < 5; i++) { g.beginPath(); g.ellipse(270, 50, 54 + i * 7, 18 + i * 3, -.25, 0, TAU); g.stroke(); }
+      g.restore();
+      ellipse(g, 270, 50, 44, 44, '#030207', .6);
+      const chunks = 16;
+      for (let k = 0; k < chunks; k++) {
+        const cx = k * W / (chunks - 1), under = Math.exp(-(((cx - 270) / 90) ** 2)), lift = under * (18 + (k * 13) % 26), y = 126 - lift, w = 12 + (k * 7) % 9;
+        paint(g, [[cx - w, y], [cx - w * .5, y - 4], [cx + w * .6, y - 3], [cx + w, y + 1], [cx + w * .5, y + 8 + lift * .2], [cx - w * .4, y + 10 + lift * .2]], p.middle, p.ink, 3440 + k, true, .5);
+        if (lift > 8) { for (let j = 0; j < 4; j++) ellipse(g, cx + (j - 1.5) * 5, y + 14 + j * 4 + lift * .2, .8, .6, p.ink, .7); lights.push({ x: cx, y: y + 4, r: 10, a: .3, kind: 'pulse', phase: k * 1.1, color: p.glow }); }
+      }
+      paint(g, [[0, 142], [0, 130], [W, 132], [W, 142]], mix(p.middle, p.ink, .3), p.ink, 3460, true, .5);
+      for (const [ax, tilt] of [[56, -.14], [374, .12]] as const) {
+        g.save(); g.translate(ax, 138); g.rotate(tilt); g.globalAlpha = .75; arch(g, 0, 0, 20, 84, { ...p, stone: p.middle }, 3470 + ax); g.restore();
+      }
+      lights.push({ x: 270, y: 50, r: 76, a: .35, kind: 'pulse', phase: 0, color: p.accent });
+    } else {
+      // 残り火の心臓: the Ember Heart itself, hung in its cavern by veins of fire.
+      g.fillStyle = '#140a0d'; g.fillRect(0, 0, W, 142);
+      const cav = g.createRadialGradient(292, 70, 0, 292, 70, 230); cav.addColorStop(0, '#7a3424'); cav.addColorStop(.35, '#3e1a1a'); cav.addColorStop(1, '#140a0d');
+      g.fillStyle = cav; g.fillRect(0, 0, W, 142);
+      // Veins of fire wander out from the heart into the ceiling, the walls and the floor, forking as they go.
+      const veins: Pt[][] = [];
+      const grow = (x: number, y: number, a: number, steps: number, seed: number, fork: boolean): void => {
+        const vr = rng(seed), path: Pt[] = [[x, y]];
+        for (let k = 0; k < steps; k++) {
+          a += (vr() - .5) * .7; x += Math.cos(a) * 9; y += Math.sin(a) * 9;
+          path.push([x, Math.min(142, y)]);
+          if (fork && k === 2) grow(x, y, a + (vr() > .5 ? .7 : -.7), steps - 4, seed + 7, false);
+        }
+        veins.push(path);
+      };
+      const roots: [number, number, number, number][] = [
+        [292, 22, -1.7, 4], [312, 30, -.6, 12], [272, 32, -2.5, 20], [322, 62, -.1, 9], [262, 62, 3.2, 14],
+        [282, 104, 2.1, 5], [302, 104, 1.1, 5], [292, 110, 1.6, 4], [266, 88, 2.6, 9], [318, 88, .5, 9],
+      ];
+      roots.forEach(([vx, vy, a, steps], i) => grow(vx, vy, a, steps, 3485 + i * 13, steps > 6));
+      for (const v of veins) { line(g, v, '#3a1512', 3.2); line(g, v, '#7a2a1a', 2.1); line(g, v, p.accent, .8, .8); line(g, v, '#fff0c0', .3, .5); }
+      paint(g, [[0, 0], [124, 0], [94, 20], [64, 60], [52, 142], [0, 142]], '#1c1013', '#0d0708', 3480, true, .6);
+      paint(g, [[W, 0], [W, 142], [380, 142], [374, 70], [354, 24], [332, 0]], '#1c1013', '#0d0708', 3481, true, .6);
+      for (let k = 0; k < 9; k++) { const sx = 130 + k * 22, h = 8 + (k * 7) % 14; paint(g, [[sx - 5, -2], [sx + 5, -2], [sx + 1, h]], '#24141a', '#0d0708', 3482 + k, false, .4); }
+      glow(g, 292, 66, 96, '#ff9842', .35);
+      paint(g, [[292, 18], [324, 40], [322, 82], [292, 112], [262, 82], [260, 40]], '#ae5a3a', '#3a1a18', 3490, false, .7);
+      paint(g, [[292, 26], [312, 44], [308, 78], [292, 98], [278, 70]], '#f0a35c', '#ae5a3a', 3491, false, .4);
+      paint(g, [[292, 40], [302, 56], [296, 76], [288, 64]], '#ffe2a0', '#f0a35c', 3492, false, .3);
+      line(g, [[260, 40], [292, 52], [324, 40]], '#3a1a18', .5, .6); line(g, [[262, 82], [292, 70], [322, 82]], '#3a1a18', .5, .6);
+      ellipse(g, 292, 138, 84, 4, p.accent, .5);
+      lights.push({ x: 292, y: 64, r: 72, a: .75, kind: 'beat', phase: 0, color: p.glow });
+      for (const v of veins) lights.push({ x: v[1][0], y: v[1][1], r: 12, a: .4, kind: 'beat', phase: .04, color: p.glow });
+      lights.push({ x: 292, y: 138, r: 34, a: .45, kind: 'beat', phase: .02, color: p.glow });
+    }
+  });
+  return { layer: backdrop, lights };
+}
+
+/** Arena motion: light shafts on the altar, aurora in the throne-room window, rings round the black sun. */
+function arenaMotion(g: Ctx, id: AreaId, p: Colours, time: number, alpha: number): void {
+  g.save(); g.globalAlpha = alpha;
+  if (id === 'ruins') {
+    g.globalCompositeOperation = 'lighter';
+    for (let k = 0; k < 4; k++) {
+      const top = 230 + k * 40 + Math.sin(time * .21 + k) * 8, a = .06 + .035 * Math.sin(time * .5 + k * 1.3);
+      const grad = g.createLinearGradient(0, 0, 0, 96); grad.addColorStop(0, hexAlpha(p.light, a)); grad.addColorStop(1, hexAlpha(p.light, 0));
+      g.fillStyle = grad; g.beginPath(); g.moveTo(top - 7, -2); g.lineTo(top + 7, -2); g.lineTo(296, 96); g.lineTo(288, 96); g.closePath(); g.fill();
+    }
+  } else if (id === 'rimeholt') {
+    throneWindow(g); g.clip(); g.globalCompositeOperation = 'lighter';
+    for (let k = 0; k < 2; k++) {
+      const color = k ? '#b6a6ff' : '#93e6c8';
+      g.beginPath();
+      for (let x = 258; x <= 326; x += 4) { const y = 34 + k * 14 + Math.sin(x * .05 + time * .3 + k * 2) * 6; x === 258 ? g.moveTo(x, y) : g.lineTo(x, y); }
+      g.strokeStyle = hexAlpha(color, .1 + .04 * Math.sin(time * .5 + k)); g.lineWidth = 9; g.stroke();
+      g.strokeStyle = hexAlpha(color, .14); g.lineWidth = 2; g.stroke();
+    }
+  } else if (id === 'hollow') {
+    for (let k = 0; k < 3; k++) {
+      const t = frac(time * .1 + k / 3);
+      g.strokeStyle = hexAlpha(p.accent, (1 - t) * .16); g.lineWidth = .6;
+      g.beginPath(); g.ellipse(270, 50, 48 + t * 70, 47 + t * 62, -.3, 0, TAU); g.stroke();
+    }
+  } else if (id === 'glimmer') {
+    g.globalCompositeOperation = 'lighter';
+    for (let k = 0; k < 26; k += 2) {
+      const a = k / 26 * TAU, x = 292 + Math.cos(a) * 112, y = 84 + Math.sin(a) * 74;
+      if (y > 132) continue;
+      shine(g, x, y, 4, '#fff1ff', Math.max(0, Math.sin(time * 1.7 + k * 1.3)) * .5);
+    }
+  } else if (id === 'ashwood') {
+    // Sparks pour out of the burning hollow.
+    particles(8, 3501, (i, a, b) => {
+      const t = frac(time * (.3 + a * .2) + b), x = 298 + Math.sin(t * 6 + i) * 6 + t * (i % 2 ? 14 : -10), y = 82 - t * 60;
+      ellipse(g, x, y, .5, .5, i % 2 ? '#ffd08a' : p.glow, Math.sin(t * Math.PI) * .9);
+    });
+  }
+  g.restore();
+}
+
+/** The deeper the party goes, the closer the dark (and the warmer or colder the horizon). */
+function depthShade(g: Ctx, id: AreaId, deep: number, boss: number): void {
+  const d = DEPTH[id], k = Math.min(1, deep + boss);
+  if (k <= 0) return;
+  const shade = g.createLinearGradient(0, 0, 0, H);
+  shade.addColorStop(0, hexAlpha(d.shade, .3 * k)); shade.addColorStop(.75, hexAlpha(d.shade, .14 * k)); shade.addColorStop(1, hexAlpha(d.shade, .08 * k));
+  g.fillStyle = shade; g.fillRect(0, 0, W, H);
+  if (deep <= 0) return;
+  g.save(); g.globalCompositeOperation = 'lighter';
+  const rise = g.createLinearGradient(0, 88, 0, 142); rise.addColorStop(0, hexAlpha(d.glow, 0)); rise.addColorStop(1, hexAlpha(d.glow, d.heat * deep));
+  g.fillStyle = rise; g.fillRect(0, 88, W, 54); g.restore();
 }
 
 // ───────────────────────────── per-frame light and motion ─────────────────────────────
@@ -970,29 +1358,47 @@ function vignette(g: Ctx, strength = .3): void {
  */
 export function drawStoryAreaBackground(g: Ctx, areaId: AreaId, scroll: number, time: number, mood: SceneMood = CALM): void {
   const s = scene(areaId), p = COLOURS[areaId], mist = MIST[areaId];
+  // depth 0–1 brings in the deeper props, 1–2 the boss arena (which fades the deeper props out again)
+  const depth = Math.max(0, Math.min(2, mood.depth ?? 0)), boss = Math.max(0, depth - 1), deep = Math.min(1, depth) * (1 - boss);
+  if (deep > 0 || boss > 0) {
+    // bake both on the way into the deeper stages, so the walk to the boss does not stall
+    s.deep ??= deepLayer(areaId, p);
+    s.arena ??= arenaLayer(areaId, p);
+  }
   g.save(); g.imageSmoothingEnabled = true;
-  g.drawImage(s.sky.c, 0, 0, W, H);
-  skyMotion(g, areaId, p, s, scroll, time);
-  tile(g, s.distant, scroll * PAR.distant);
-  tile(g, s.far, scroll * PAR.far);
-  band(g, s.mist, scroll * PAR.mist + time * 3.5, 98, 40, mist);
-  tile(g, s.middle, scroll * PAR.middle);
+  if (boss < 1) {
+    g.drawImage(s.sky.c, 0, 0, W, H);
+    skyMotion(g, areaId, p, s, scroll, time);
+    tile(g, s.distant, scroll * PAR.distant);
+    tile(g, s.far, scroll * PAR.far);
+    band(g, s.mist, scroll * PAR.mist + time * 3.5, 98, 40, mist);
+    tile(g, s.middle, scroll * PAR.middle);
+    if (deep > 0 && s.deep) { g.save(); g.globalAlpha = deep; tile(g, s.deep.layer, scroll * PAR.deep); g.restore(); }
+  }
+  if (boss > 0 && s.arena) {
+    g.save(); g.globalAlpha = boss; g.drawImage(s.arena.layer.c, 0, 0, W, s.arena.layer.h); g.restore();
+    arenaMotion(g, areaId, p, time, boss);
+    band(g, s.mist, scroll * PAR.mist + time * 3.5, 98, 40, mist * .5 * boss);
+  }
   motion(g, areaId, p, scroll, time, false);
   tile(g, s.near, scroll * PAR.near);
   smoke(g, s.lights.near, scroll, time, mix(p.horizon, p.light, .25));
   tile(g, s.floor, scroll * PAR.floor);
   band(g, s.mist, scroll * PAR.ground + time * 6, 128, 26, mist * .55);
+  depthShade(g, areaId, deep, boss);
   lanternLight(g, mood, time);
   // Light sources glow through the dark (drawn after the lantern's shade).
   g.save(); g.globalCompositeOperation = 'lighter';
-  const boost = 1 + (1 - Math.max(0, Math.min(1, mood.lantern))) * .35;
-  shineAll(g, s.lights.distant, scroll, PAR.distant, time, boost);
-  shineAll(g, s.lights.far, scroll, PAR.far, time, boost);
-  shineAll(g, s.lights.middle, scroll, PAR.middle, time, boost);
+  const boost = 1 + (1 - Math.max(0, Math.min(1, mood.lantern))) * .35, behind = boost * (1 - boss);
+  shineAll(g, s.lights.distant, scroll, PAR.distant, time, behind);
+  shineAll(g, s.lights.far, scroll, PAR.far, time, behind);
+  shineAll(g, s.lights.middle, scroll, PAR.middle, time, behind);
+  if (s.deep) shineAll(g, s.deep.lights, scroll, PAR.deep, time, boost * deep);
+  if (s.arena) shineAll(g, s.arena.lights, 0, 0, time, boost * boss);
   shineAll(g, s.lights.near, scroll, PAR.near, time, boost);
   shineAll(g, s.lights.floor, scroll, PAR.floor, time, boost);
   g.restore();
-  paper(g); vignette(g, .23); g.restore();
+  paper(g); vignette(g, .23 + .1 * boss); g.restore();
 }
 export function drawStoryAreaForeground(g: Ctx, areaId: AreaId, scroll: number, time: number): void {
   const s = scene(areaId);

@@ -32,6 +32,8 @@ type Mode = 'none' | 'battle' | 'camp' | 'title';
 const CAMP_FOCUS_Y = 0.8;
 /** The camp frame is close-cropped around the fire so the party reads at small sizes. */
 const CAMP_ZOOM = 1.3;
+/** Seconds (game time) the scenery takes to change between stage bands: about one walk to the next stage. */
+const SCENE_DEPTH_FADE = 1.2;
 
 const SKIP_TEXT = new Set(['PERFECT', 'LAST LIGHT', '中断可能！']);
 
@@ -61,6 +63,10 @@ export class Renderer implements IRenderer {
   private battle: Battle | null = null;
   private lastSimTime = 0;
   private scroll = 0;
+  /** Scenery depth (0 stages 1–4, 1 stages 5–9, 2 boss), eased while the party walks to the next band. */
+  private sceneDepth = 0;
+  /** Area the depth belongs to: a new area (new run, Descent) starts at its own depth without a blend. */
+  private sceneArea: string | null = null;
   private sceneTime = 0;
   private modeFade = 0; // black fade-in after switching scenes
   private introDark = 0;
@@ -219,6 +225,7 @@ export class Renderer implements IRenderer {
     this.burnPending.length = 0;
     this.lastSimTime = battle.time;
     this.scroll = 0;
+    this.sceneArea = null;
     this.introDark = 0;
     this.flareGlow = 0;
     this.endDark = 0;
@@ -951,6 +958,14 @@ export class Renderer implements IRenderer {
     W.camera.update(realDt);
     this.hud.update(realDt);
     if (battle.phase === 'walk') this.scroll += simDt * (battle.descending ? 75 : battle.routed ? 130 : 44);
+    const depth = battle.isBossStage ? 2 : battle.stage >= 4 ? 1 : 0;
+    if (battle.area.id !== this.sceneArea) {
+      this.sceneArea = battle.area.id;
+      this.sceneDepth = depth;
+    } else if (this.sceneDepth !== depth) {
+      const step = simDt / SCENE_DEPTH_FADE;
+      this.sceneDepth = depth > this.sceneDepth ? Math.min(depth, this.sceneDepth + step) : Math.max(depth, this.sceneDepth - step);
+    }
     this.units.layout(battle, simDt);
     this.units.updateCorpses(simDt);
     this.fx.update(simDt);
@@ -979,6 +994,7 @@ export class Renderer implements IRenderer {
       flare: this.flareGlow,
       lightX: carriers ? lightX / carriers : 106,
       overdrive: battle.overdriveActive > 0,
+      depth: this.sceneDepth,
     });
     g.setTransform(this.worldDensity, 0, 0, this.worldDensity, 0, 0);
     g.globalAlpha = 1;
