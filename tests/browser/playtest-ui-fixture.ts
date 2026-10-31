@@ -74,7 +74,7 @@ if(battleMode){
 function paint(){if(battleMode){renderer.renderBattle(battle,1/60);hud?.update(0);}else renderer.renderCamp(save,1/60);requestAnimationFrame(paint);}
 requestAnimationFrame(paint);
 let chosen='';
-const result:RunResult={areaId:'heart',reason:'wiped',stageReached:10,stagesCleared:9,segments:[],kills:33,eliteKills:1,bossDefeated:false,loot:{gold:35000000,embers:43,shards:0},duration:108,bestHit:69900000,interrupts:11,perfects:0,routs:3,emberNovas:1,missed:{},killedBy:'The Hollow Emberbound'};
+const result:RunResult={areaId:'heart',reason:'wiped',stageReached:10,stagesCleared:9,segments:[],kills:33,eliteKills:1,bossDefeated:false,loot:{gold:35000000,embers:43,shards:0},duration:108,bestHit:69900000,interrupts:11,perfects:0,routs:3,emberNovas:1,missed:{},killedBy:'The Hollow Emberbound',firstDown:{hero:'oracle',time:31.4,by:'Dark Mending'}};
 function click(selector:string){const el=document.querySelector<HTMLElement>(selector);if(!el)throw Error(`Missing ${selector}`);el.click();}
 if(scenario==='review-settings')settings();
 if(scenario==='review-area')void notices.play([areaCard('heart')]);

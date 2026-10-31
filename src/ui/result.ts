@@ -4,7 +4,7 @@ import type { Notice } from '../core/state.ts';
 import type { RunEndReason, RunResult, SaveData } from '../core/types.ts';
 import type { IAudio } from '../audio/api.ts';
 import type { CampTab } from './contracts.ts';
-import { affordableLevelCount, killedByAdvice, missedLines, nextGoal, reasonAdvice, type RecapLine } from './advice.ts';
+import { affordableLevelCount, changeSinceLastRun, firstDownLine, killedByAdvice, missedLines, nextGoal, reasonAdvice, type RecapLine, type RunChange } from './advice.ts';
 import { clamp, countUp, fmt, fmtSec, h, icon, wait } from './dom.ts';
 import type { Modals } from './modal.ts';
 
@@ -54,6 +54,25 @@ function stageTrack(r: RunResult): HTMLElement {
     );
   });
   return wrap;
+}
+
+/** At most this many recap lines (who fell first, the final blow, missed interrupts). */
+const MAX_RECAP = 4;
+
+/** 「前回より　ステージ +1・撃破 +3・生存 +12.0s・Lv合計 +5」 */
+function changeRow(c: RunChange): HTMLElement {
+  const part = (label: string, d: number, text: string) =>
+    h('span', { class: `res-change-part ${d > 0 ? 'up' : d < 0 ? 'down' : 'same'}` }, h('span', { text: label }), h('b', { text }));
+  const signed = (d: number, fmtD: (n: number) => string = (n) => String(n)) => (d > 0 ? `+${fmtD(d)}` : d < 0 ? `−${fmtD(-d)}` : '±0');
+  return h(
+    'div',
+    { class: 'res-change' },
+    h('span', { class: 'res-change-label', text: '前回より' }),
+    part('ステージ', c.stage, signed(c.stage)),
+    part('撃破', c.kills, signed(c.kills)),
+    c.time !== null ? part('生存', Math.round(c.time * 10), signed(c.time, (n) => fmtSec(n))) : null,
+    part('Lv合計', c.levels, signed(c.levels)),
+  );
 }
 
 function recapRow(l: RecapLine): HTMLElement {
@@ -153,14 +172,22 @@ export function showResult(host: ResultHost, r: RunResult, notices: Notice[]): P
     );
   }
 
-  // ── recap
+  // ── recap: who fell first (the role the party lost), the final blow or why the run ended, missed interrupts
   const recap: RecapLine[] = [];
-  if (r.reason === 'wiped' && r.killedBy) recap.push(killedByAdvice(r.killedBy, save));
-  recap.push(...missedLines(r, save));
-  if (!recap.length) {
+  const firstDown = firstDownLine(r, save);
+  if (firstDown) recap.push(firstDown);
+  const finalBlow = r.reason === 'wiped' && !!r.killedBy;
+  if (finalBlow) recap.push(killedByAdvice(r.killedBy!, save));
+  const missed = missedLines(r, save);
+  recap.push(...missed.slice(0, Math.max(0, MAX_RECAP - recap.length)));
+  if (!finalBlow && !missed.length) {
     const ra = reasonAdvice(r, save);
     if (ra) recap.push(ra);
   }
+  const recapRows = recap.map(recapRow);
+  // what the upgrades since the last failed run in this area changed (this session)
+  const change = changeSinceLastRun(r, save);
+  if (change) recapRows.unshift(changeRow(change));
 
   // ── next goal
   const goal = nextGoal(save);
@@ -223,7 +250,7 @@ export function showResult(host: ResultHost, r: RunResult, notices: Notice[]): P
       stats,
       h('div', { class: 'res-section' }, h('div', { class: 'res-section-h', text: '獲得' }), h('div', { class: 'res-loot' }, ...lootItems), bonusRows.length ? h('div', { class: 'res-bonuses' }, ...bonusRows) : null),
       recordRows.length ? h('div', { class: 'res-section' }, h('div', { class: 'res-section-h', text: 'ボス記録' }), ...recordRows) : null,
-      recap.length ? h('div', { class: 'res-section res-recap' }, h('div', { class: 'res-section-h', text: r.reason === 'wiped' ? '敗因と対策' : 'ふりかえり' }), ...recap.map(recapRow)) : null,
+      recapRows.length ? h('div', { class: 'res-section res-recap' }, h('div', { class: 'res-section-h', text: r.reason === 'wiped' ? '敗因と対策' : 'ふりかえり' }), ...recapRows) : null,
       h('div', { class: 'res-section res-next' }, goalEl, lvEl),
     ),
     h('footer', { class: 'res-footer' }, actionHint, h('div', { class: 'res-actions' }, againBtn, upgradeBtn)),

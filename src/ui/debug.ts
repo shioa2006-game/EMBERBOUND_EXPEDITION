@@ -89,6 +89,7 @@ export function installDebug(host: DebugHost, root: HTMLElement): DebugReadout {
         routs: 0,
         emberNovas: 0,
         killedBy: null,
+        firstDown: null,
         missed: {},
       };
       const notices = state.applyRunResult(s, r);

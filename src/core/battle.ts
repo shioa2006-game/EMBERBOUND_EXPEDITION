@@ -156,6 +156,7 @@ export class Battle {
   private aegisCd = 0;
   private scavenged = 0;
   private killedBy: string | null = null;
+  private firstDown: RunResult['firstDown'] = null;
   private missed: Record<string, number> = {};
 
   constructor(cfg: BattleConfig) {
@@ -1491,6 +1492,7 @@ export class Battle {
     if (h.hp <= 0) {
       h.hp = 0;
       this.killedBy = o.label ?? src?.name ?? null;
+      this.firstDown ??= { hero: h.key as HeroId, time: this.time, by: this.killedBy };
       this.killHero(h);
     } else if (m.intercession && h.hp / h.maxHp < 0.2 && h.intercedeCd <= 0) {
       const o2 = this.heroUnit('oracle');
@@ -1989,6 +1991,7 @@ export class Battle {
       routs: this.routs,
       emberNovas: this.emberNovaCount,
       killedBy: reason === 'wiped' ? this.killedBy : null,
+      firstDown: this.firstDown,
       missed: { ...this.missed },
     };
     this.emit({ type: 'runEnd', reason });

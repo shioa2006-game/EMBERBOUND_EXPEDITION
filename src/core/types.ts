@@ -475,6 +475,8 @@ export interface RunResult {
   routs: number;
   emberNovas: number;
   killedBy: string | null; // what landed the final blow on the last hero
+  /** The first hero to fall and what hit them: losing a role early is often the real cause of a wipe. */
+  firstDown: { hero: HeroId; time: number; by: string | null } | null;
   missed: Record<string, number>; // interruptible abilities that landed un-interrupted
 }
 

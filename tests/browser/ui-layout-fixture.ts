@@ -10,9 +10,10 @@ import { CampView } from '../../src/ui/camp/index.ts';
 import { TopBar } from '../../src/ui/header.ts';
 import { Modals } from '../../src/ui/modal.ts';
 import { showResult } from '../../src/ui/result.ts';
+import { changeSinceLastRun } from '../../src/ui/advice.ts';
 import { campSceneHeight } from '../../src/ui/layout.ts';
 import { Renderer } from '../../src/render/renderer.ts';
-import { AREA_ORDER, type RunResult } from '../../src/core/types.ts';
+import { AREA_ORDER, HERO_ORDER, type RunResult } from '../../src/core/types.ts';
 import { makeSave } from '../helpers/saves.ts';
 import type { IAudio } from '../../src/audio/api.ts';
 import type { CampTab } from '../../src/ui/contracts.ts';
@@ -53,9 +54,15 @@ const result: RunResult = {
   segments: (late ? AREA_ORDER : ['ashwood'] as const).map(areaId => ({ areaId, stageReached: 8, stagesCleared: 7, bossDefeated: false, bossTime: 0, lanternFrac: .4 })),
   kills: 19, eliteKills: 1, bossDefeated: false, loot: { gold: 90, embers: 5, shards: late ? 100 : 0 },
   duration: 39.8, bestHit: 37, interrupts: 1, perfects: 1, routs: 2, emberNovas: late ? 3 : 0,
-  killedBy: 'Heavy Swing (Ash Brute)', missed: { 'Gore Charge': 1, 'Heavy Swing': 1 },
+  killedBy: 'Heavy Swing (Ash Brute)', firstDown: late ? { hero: 'arcanist', time: 12.3, by: 'Gore Charge' } : null, missed: { 'Gore Charge': 1, 'Heavy Swing': 1 },
 };
 if (scenario.includes('result')) {
+  if (!scenario.endsWith('plain')) {
+    // an earlier wipe in the same area, two levels per hero ago, so the result shows 「前回より」 (single-area runs only)
+    for (const h of HERO_ORDER) save.heroes[h].level -= 2;
+    changeSinceLastRun({ ...result, stageReached: 6, kills: 14, duration: 31.2 }, save);
+    for (const h of HERO_ORDER) save.heroes[h].level += 2;
+  }
   void showResult({ modals, audio, getSave: () => save, firstTime }, result,
     scenario.endsWith('plain') ? [] : [{ kind: 'newRecord', area: 'ashwood', stage: 8 }]);
 }
@@ -81,6 +88,12 @@ async function audit() {
     const last = scroll.lastElementChild!;
     if (last.getBoundingClientRect().bottom > scroll.getBoundingClientRect().bottom + 1) failures.push('Result details cannot scroll fully into view');
     measurements.actions = initial; measurements.scrollHeight = scroll.scrollHeight;
+    // The recap names who fell first (late: a lost Arcanist) and what changed since the last wipe (early, one area).
+    const recapText = document.querySelector('.res-recap')?.textContent ?? '';
+    if (late && !recapText.includes('魔法役')) failures.push('Recap lacks the first hero to fall');
+    const change = document.querySelector('.res-change');
+    if (!late && !scenario.endsWith('plain') && !change) failures.push('Recap lacks the change since the last run');
+    if (change && change.getBoundingClientRect().right > scroll.getBoundingClientRect().right + 1) failures.push('Change since the last run is clipped');
     scroll.scrollTop = 0;
   } else {
     // Camp: the departure control is shared by every tab and never moves with the content.

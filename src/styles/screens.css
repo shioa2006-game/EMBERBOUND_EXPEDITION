@@ -514,6 +514,40 @@
   gap: 6px;
   color: var(--good);
 }
+/* 前回より: what changed since the last failed run in this area */
+.res-change {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 14px;
+  margin-bottom: 4px;
+  padding: 5px 10px;
+  border-radius: 4px;
+  background: rgba(0, 0, 0, 0.22);
+  font-size: var(--fs-s);
+}
+.res-change-label {
+  color: var(--text-faint);
+}
+.res-change-part {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 5px;
+  color: var(--text-dim);
+}
+.res-change-part b {
+  font-family: var(--font-num);
+  font-weight: normal;
+}
+.res-change-part.up b {
+  color: var(--good);
+}
+.res-change-part.down b {
+  color: #ff9a8a;
+}
+.res-change-part.same b {
+  color: var(--text-faint);
+}
 .res-next {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;

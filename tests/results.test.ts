@@ -51,6 +51,7 @@ function run(segments: RunSegment[], o: { reason?: RunEndReason; gold?: number; 
     routs: 0,
     emberNovas: 0,
     killedBy: null,
+    firstDown: null,
     missed: {},
   };
 }
