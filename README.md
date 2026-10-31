@@ -26,6 +26,7 @@
 - 1回の遠征（Run）はランタンが尽きるか全滅で終了。獲得物はすべて持ち帰れる。
 - Gold でヒーローのレベル、Ember でスキルツリー、Relic Shard で Relic を強化・解放。
 - The Hollow Sovereign 撃破後は **Rekindle（転生）** で Relic・Overdrive・Descent（連続踏破）と最後の地が解放される。
+- 転生後に再び踏破したエリアの初踏破・深部到達ボーナスは半分。その周回でクリア済みのエリアでは、ボス・エリートのEmberが1/4（Goldは通常どおり）。
 
 ## 起動方法
 

@@ -170,6 +170,13 @@ export function fmtPct(f: number, digits = 0): string {
   return `${(f * 100).toFixed(digits)}%`;
 }
 
+/** A reward fraction in words: 0.5 → 半分, 0.25 → 1/4, otherwise a percentage. */
+export function fracText(f: number): string {
+  if (f === 0.5) return '半分';
+  for (const d of [3, 4, 5]) if (Math.abs(f * d - 1) < 1e-9) return `1/${d}`;
+  return fmtPct(f);
+}
+
 /** Briefly flash a CSS animation class on an element (restartable). */
 export function flashClass(el: Element, cls: string, ms = 900): void {
   el.classList.remove(cls);

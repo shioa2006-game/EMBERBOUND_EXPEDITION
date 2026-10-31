@@ -1532,6 +1532,23 @@
   color: var(--unstoppable);
 }
 
+/* 再戦 Ember 1/4: a beaten area's boss and elites pay little (top right of the boss card) */
+.camp-boss-farm {
+  flex: none;
+  align-self: flex-start;
+  margin-left: auto;
+  padding: 1px 8px;
+  border: 1px solid rgba(255, 138, 61, 0.35);
+  border-radius: 999px;
+  color: var(--text-dim);
+  font-size: var(--fs-xs);
+  white-space: nowrap;
+}
+
+.camp-boss-farm b {
+  font-weight: normal;
+}
+
 .camp-perks {
   display: grid;
   gap: 4px;

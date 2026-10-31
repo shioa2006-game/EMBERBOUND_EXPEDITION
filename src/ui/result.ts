@@ -126,7 +126,12 @@ export function showResult(host: ResultHost, r: RunResult, notices: Notice[]): P
   }
   const bonusRows: HTMLElement[] = [];
   for (const n of depths) bonusRows.push(h('div', { class: 'res-bonus' }, icon('ember', 1), h('span', { text: `深部到達ボーナス（${AREAS[n.area].name} ステージ${n.stage}）` }), h('b', { text: `+${n.embers}` })));
-  for (const n of firstClears) bonusRows.push(h('div', { class: 'res-bonus' }, icon('ember', 1), h('span', { text: `初回踏破ボーナス（${AREAS[n.area].name}）` }), h('b', { text: `+${n.embers}` })));
+  for (const n of firstClears) {
+    if (n.embers <= 0) continue;
+    // after a Rekindle an area beaten before pays a reduced bonus (BAL.repeatClearEmbers)
+    const label = n.embers < AREAS[n.area].firstClearEmbers ? '再踏破ボーナス' : '初回踏破ボーナス';
+    bonusRows.push(h('div', { class: 'res-bonus' }, icon('ember', 1), h('span', { text: `${label}（${AREAS[n.area].name}）` }), h('b', { text: `+${n.embers}` })));
+  }
   for (const n of stars) {
     bonusRows.push(
       h(

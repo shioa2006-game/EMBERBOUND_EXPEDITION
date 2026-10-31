@@ -1,6 +1,7 @@
 // applyRunResult (notices, unlocks, recruits, embers, records) and Rekindle (prestige).
 import { describe, expect, it } from 'vitest';
 import { BAL } from '../src/core/balance.ts';
+import { simulateRun } from '../src/core/battle.ts';
 import { computeMods } from '../src/core/mods.ts';
 import {
   applyRunResult,
@@ -342,5 +343,45 @@ describe('Rekindle', () => {
     applyRunResult(b, kill('hollow'));
     applyRunResult(b, kill('heart'));
     expect(rekindleShards(b)).toBeGreaterThan(rekindleShards(a));
+  });
+});
+
+describe('Ember for content beaten before', () => {
+  /** An area as a Rekindle leaves it: beaten in an earlier cycle, not yet this one. */
+  const beatenBefore = (s: SaveData, id: AreaId) => {
+    s.prestige = 1;
+    Object.assign(s.areas[id], { unlocked: true, cleared: false, everCleared: true, best: 0, bestEver: 10 });
+  };
+  const embersOf = (ns: Notice[], kind: 'depth' | 'firstClear') =>
+    ns.reduce((a, n) => a + (n.kind === kind ? n.embers : 0), 0);
+
+  it('pays BAL.repeatClearEmbers of the first-clear and depth bonus after a Rekindle', () => {
+    const s = makeSave({ heroes: ['guardian'] });
+    beatenBefore(s, 'ashwood');
+    const ns = applyRunResult(s, run([seg('ashwood', { stage: 6 })], { reason: 'wiped' }));
+    expect(embersOf(ns, 'depth')).toBe(Math.round(5 * BAL.repeatClearEmbers * BAL.depthEmbers));
+    const ks = applyRunResult(s, kill('ashwood'));
+    expect(embersOf(ks, 'firstClear')).toBe(Math.round(AREAS.ashwood.firstClearEmbers * BAL.repeatClearEmbers));
+    expect(embersOf(ks, 'depth')).toBe(Math.round(4 * BAL.repeatClearEmbers * BAL.depthEmbers));
+  });
+
+  it('still pays in full for an area never beaten (the Heart after the first Rekindle)', () => {
+    const s = makeSave({ heroes: 'all', unlocked: 'all' });
+    s.prestige = 1;
+    const ns = applyRunResult(s, kill('heart'));
+    expect(embersOf(ns, 'firstClear')).toBe(AREAS.heart.firstClearEmbers);
+    expect(embersOf(ns, 'depth')).toBe(9 * BAL.depthEmbers);
+  });
+
+  it('pays BAL.clearedAreaEmbers for elites and the boss of an area cleared this cycle', () => {
+    const base = makeSave({ heroes: ['guardian'], level: 40 });
+    const fresh = simulateRun(clone(base), 'ashwood', 11);
+    const farmed = clone(base);
+    farmed.areas.ashwood.cleared = true;
+    const again = simulateRun(farmed, 'ashwood', 11);
+    const cut = (e: number) => Math.max(1, Math.round(e * BAL.clearedAreaEmbers));
+    expect(fresh.bossDefeated && again.bossDefeated).toBe(true);
+    expect(fresh.loot.embers).toBe(BAL.eliteEmbers[0] + BAL.bossEmbers[0]);
+    expect(again.loot.embers).toBe(cut(BAL.eliteEmbers[0]) + cut(BAL.bossEmbers[0]));
   });
 });

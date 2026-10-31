@@ -1,12 +1,12 @@
 // 遠征 / Expedition tab: the descending route of the six areas, details of the selected area
 // and (after the Hollow Sovereign falls) the Rekindle panel. The 出発 control lives in the camp shell.
 import { BAL, formatTime } from '../../core/balance.ts';
-import { bossPity, bossShardsFor, canDescendFrom, canRekindle, rekindleShards } from '../../core/state.ts';
+import { bossPity, bossShardsFor, canDescendFrom, canRekindle, firstClearBonus, rekindleShards } from '../../core/state.ts';
 import type { Notice } from '../../core/state.ts';
 import { AREA_ORDER, type AreaId } from '../../core/types.ts';
 import { AREAS } from '../../data/areas.ts';
 import { HEROES } from '../../data/heroes.ts';
-import { append, clear, fmt, h, icon, keycap } from './dom.ts';
+import { append, clear, fmt, fracText, h, icon, keycap } from './dom.ts';
 import { departureArea, noticeAreas, type CampHost, type TabView } from './host.ts';
 import { shake } from './juice.ts';
 import { openRekindle } from './rekindle.ts';
@@ -315,14 +315,25 @@ export class ExpeditionTab implements TabView {
         bossRec,
         pity > 0 ? h('div', 'camp-boss-pity', `ランタンの記憶：ボスのHP・攻撃力 -${Math.round(pity * 100)}%`) : null,
       ),
+      // replaying a beaten area is for Gold: say so before the player farms it for embers
+      a.cleared && BAL.clearedAreaEmbers < 1
+        ? h(
+            'div',
+            { class: 'camp-boss-farm', data: { tip: `クリア済み|このエリアのボス・エリートのEmberは${fracText(BAL.clearedAreaEmbers)}（最低1）。Goldは通常どおり。` } },
+            '再戦 ',
+            h('b', 'camp-ember', `Ember ${fracText(BAL.clearedAreaEmbers)}`),
+          )
+        : null,
     );
 
     const perks = h('ul', 'camp-perks');
     if (def.recruit && !save.heroes[def.recruit].recruited) {
       perks.appendChild(h('li', 'camp-perk camp-perk--hero', icon(`hero_${def.recruit}`, 24), h('span', null, 'ボス撃破で ', h('b', null, HEROES[def.recruit].name), ' が仲間に！')));
     }
-    if (!a.cleared) {
-      perks.appendChild(h('li', 'camp-perk', icon('ember', 20), h('span', null, '初踏破ボーナス ', h('b', 'camp-ember', `+${def.firstClearEmbers} Ember`))));
+    const clearBonus = firstClearBonus(save, id);
+    if (!a.cleared && clearBonus > 0) {
+      const again = a.everCleared ? h('small', 'camp-dim', '（再踏破）') : null;
+      perks.appendChild(h('li', 'camp-perk', icon('ember', 20), h('span', null, '初踏破ボーナス ', h('b', 'camp-ember', `+${clearBonus} Ember`), again)));
     }
     const shardGain = bossShardsFor(save, id, mods);
     if (shardGain > 0) {

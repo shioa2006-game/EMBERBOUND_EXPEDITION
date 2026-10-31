@@ -52,6 +52,10 @@ export const BAL = {
   scavengerCap: 3,
   starEmbers: 2,
   depthEmbers: 1, // embers per new best stage reached in an area (per cycle)
+  /** Boss and elite embers in an area already cleared this cycle (farming a beaten boss): this fraction, at least 1. */
+  clearedAreaEmbers: 0.25,
+  /** First-clear and depth embers for an area beaten in an earlier cycle: this fraction (0 = once per save). */
+  repeatClearEmbers: 0.5,
 
   // skills
   bashMult: 2.0, // a plain Bash is a modest hit...

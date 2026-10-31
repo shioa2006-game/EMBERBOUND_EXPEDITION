@@ -304,8 +304,11 @@ export function applyRunResult(save: SaveData, r: RunResult): Notice[] {
     if (i === 0) area.attempts += 1;
     if (seg.stageReached > area.best) {
       if (area.best > 0 && !seg.bossDefeated) notices.push({ kind: 'newRecord', area: seg.areaId, stage: seg.stageReached });
-      // pushing the frontier always feeds the Skill Tree: +1 Ember per new stage reached (per cycle, stage 1 free)
-      const depth = Math.max(0, seg.stageReached - Math.max(area.best, 1)) * BAL.depthEmbers;
+      // pushing the frontier always feeds the Skill Tree: +1 Ember per new stage reached (per cycle, stage 1 free);
+      // stages already reached in an earlier cycle pay only BAL.repeatClearEmbers of that
+      const fresh = Math.max(0, seg.stageReached - Math.max(area.best, area.bestEver, 1));
+      const again = Math.max(0, seg.stageReached - Math.max(area.best, 1)) - fresh;
+      const depth = Math.round((fresh + again * BAL.repeatClearEmbers) * BAL.depthEmbers);
       if (depth > 0) {
         save.embers += depth;
         save.stats.embersEarned += depth;
@@ -336,12 +339,13 @@ export function applyRunResult(save: SaveData, r: RunResult): Notice[] {
       }
     }
     const first = !area.cleared;
+    const bonus = firstClearBonus(save, seg.areaId); // before everCleared flips
     area.cleared = true;
     area.everCleared = true;
     if (first) {
       const def = AREAS[seg.areaId];
-      save.embers += def.firstClearEmbers;
-      notices.push({ kind: 'firstClear', area: seg.areaId, embers: def.firstClearEmbers });
+      save.embers += bonus;
+      notices.push({ kind: 'firstClear', area: seg.areaId, embers: bonus });
       if (def.recruit && !save.heroes[def.recruit].recruited) {
         const lvl = recruitLevel(save);
         save.heroes[def.recruit].recruited = true;
@@ -364,6 +368,12 @@ export function applyRunResult(save: SaveData, r: RunResult): Notice[] {
     }
   });
   return notices;
+}
+
+/** Embers for clearing `id` this cycle: in full the first time ever, BAL.repeatClearEmbers of that after a Rekindle. */
+export function firstClearBonus(save: SaveData, id: AreaId): number {
+  const full = AREAS[id].firstClearEmbers;
+  return save.areas[id].everCleared ? Math.round(full * BAL.repeatClearEmbers) : full;
 }
 
 /** Boss HP and damage reduction from failed attempts ("ランタンの記憶"). */

@@ -1327,6 +1327,8 @@ export class Battle {
       embers = 1;
       this.scavenged++;
     }
+    // elites and a boss in an area already beaten this cycle pay little: replaying it is for Gold, not for the tree
+    if (t.rank !== 'normal' && embers > 0 && this.save.areas[this.area.id].cleared) embers = Math.max(1, Math.round(embers * BAL.clearedAreaEmbers));
     if (embers > 0) {
       embers = Math.max(1, Math.round(embers * m.emberMult));
       this.loot.embers += embers;

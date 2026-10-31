@@ -6,7 +6,7 @@ import { AREAS } from '../../data/areas.ts';
 import { HEROES } from '../../data/heroes.ts';
 import { TREE } from '../../data/tree.ts';
 import { isTouch } from '../dom.ts';
-import { fmt, h, icon, type Child } from './dom.ts';
+import { fmt, fracText, h, icon, type Child } from './dom.ts';
 import type { CampHost } from './host.ts';
 
 const ARM_SECONDS = 4;
@@ -48,6 +48,10 @@ export function openRekindle(host: CampHost): void {
   }
   reset.appendChild(row([icon('lantern', 20), 'エリア進行'], arrow(`${cleared}エリア踏破`, AREAS.ashwood.name)));
   reset.appendChild(row([icon('skull', 20), 'ボス撃破'], h('span', null, '未撃破に戻る', h('small', 'camp-dim', '（最速記録・星は保持）'))));
+  if (BAL.repeatClearEmbers < 1) {
+    // the second clear of an area is worth less than the first: say so before the player commits
+    reset.appendChild(row([icon('ember', 20), '踏破ボーナス'], h('span', null, '初踏破・深部到達のEmberは ', h('b', 'camp-ember', fracText(BAL.repeatClearEmbers)))));
+  }
 
   // KEEP
   const keep = h('ul', 'camp-rk-list');

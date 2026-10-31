@@ -274,3 +274,35 @@ missed beam at full HP, while an interrupt still earns BREAK and stagger. Pacing
 casual first clear 40:15 → 40:52, true ending ≈ 54–56 min, all within seed noise); the casual's first Geode
 attempt wins 7/30 instead of 3/30 and its deaths move to Shard Storm (the purple nova). Global enemy HP and
 rewards were deliberately left alone: in the playtest, more total embers did not shorten Glimmer.
+
+## 8. Ember after a Rekindle, and farming (2026-10-31)
+
+Two complaints after the playtest: the tree fills too easily after a Rekindle (embers pile up), and farming a
+beaten boss is the best way to earn embers. Both came from rewards that pay again for content already beaten:
+
+* Rekindle resets `cleared` and `best`, so the first-clear bonus (73 E over areas 1–5) and depth bonus (up to
+  9 E per area) were paid a second time, on top of boss and elite drops, during the Descent sweep.
+* Boss and elite embers drop on every kill. Farming the previous area paid 20–54 E/min against 1–7 E/min at
+  the frontier (casual levels at each area's second attempt), for 40–98% of the frontier's Gold, risk-free.
+
+Changes (`balance.ts`, `state.ts`, `battle.ts`):
+
+| constant | value | rule |
+|---|---|---|
+| `repeatClearEmbers` | **0.5** | first-clear and depth embers for an area beaten in an earlier cycle (`firstClearBonus()`); the Heart pays in full the first time |
+| `clearedAreaEmbers` | **0.25** | boss and elite embers in an area already cleared this cycle, at least 1 (farming); a cycle-2 sweep is unaffected |
+
+`repeatClearEmbers = 0` (once per save) was the stronger option: casual tree at the first Heart run 81%, full
+tree only on the true-ending run, true ending +2.6 min (noskill +4.3). The milder 0.5 was chosen. Results
+(6 seeds; cycle 1 is unchanged, the bots never farm):
+
+| casual | before | after |
+|---|---|---|
+| tree after 3 cycle-2 runs / at the first Heart run | 80% / 97% | 74% / 89% |
+| full tree | 5:31 before the true ending | 1:15 before |
+| unspent embers at the true ending | 183 | 120 (expert 147 → 100, noskill 114 → 59) |
+| true ending | 55:36 | 55:22 (expert 44:50 → 45:39, noskill 58:34 → 60:11) |
+| farming E/min (areas 1–4 behind the frontier) | 20–54 | 7–16 |
+
+The camp shows the reduced bonus (「初踏破ボーナス +3 Ember（再踏破）」), a 「再戦 Ember 1/4」 badge on a beaten
+area's boss card, and the Rekindle panel's RESET column lists 「初踏破・深部到達のEmberは半分」.
